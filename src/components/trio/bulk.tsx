@@ -1,9 +1,9 @@
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect } from 'react'
-import { clearSelection, deleteTasks, getState, selectMany, setStatus, updateTasks, useStore } from '@/data/store'
+import { clearSelection, deleteTasks, getState, moveTasksToProject, selectMany, setStatus, updateTasks, useStore } from '@/data/store'
 import { Button } from '@/components/ui/button'
-import { PersonList, Picker, PriorityList, StatusList, DueEditor, useIsPhone } from './picker'
+import { PersonList, Picker, PriorityList, ProjectList, StatusList, DueEditor, useIsPhone } from './picker'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
@@ -50,6 +50,9 @@ export function BulkBar() {
             </Picker>
             <Picker title="Due date" side="top" label="Due" button={btn} popClassName="p-0 [&>div]:p-1.5">
               {(close) => <DueEditor due={null} onPick={(d) => { updateTasks(getState().selected, () => ({ due: d })); close(); clearSelection() }} />}
+            </Picker>
+            <Picker title="Move to project" side="top" label="Move" button={btn}>
+              {(close) => <ProjectList project="" onPick={(id) => { moveTasksToProject(getState().selected, id); close(); clearSelection() }} />}
             </Picker>
             <span className="mx-0.5 h-5 w-px bg-border" />
             <Button {...btn} className="text-destructive-foreground" onClick={() => deleteTasks(getState().selected)}><Trash2Icon />Delete</Button>

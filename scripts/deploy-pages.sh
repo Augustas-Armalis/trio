@@ -11,6 +11,7 @@ touch "$TMP/.nojekyll"
 cd "$TMP"
 git init -q -b gh-pages
 git add -A
-git commit -q -m "Deploy Trio"
+# Never use the machine's own git identity: this branch is public.
+git -c user.name=Augustas-Armalis -c user.email=119808410+Augustas-Armalis@users.noreply.github.com commit -q -m "Deploy Trio"
 git push "$ORIGIN" +gh-pages:gh-pages
 echo "Deployed. https://augustas-armalis.github.io/trio/ updates in about a minute."

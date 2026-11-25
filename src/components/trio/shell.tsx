@@ -1,4 +1,4 @@
-import { CalendarDaysIcon, ChevronsUpDownIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, KeyboardIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
+import { CalendarDaysIcon, CheckIcon, ChevronsUpDownIcon, PencilIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, KeyboardIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import type { GroupBy, Priority, SortBy, ViewKind } from '@/types'
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle } from '@/components/ui/drawer'
 import { Kbd } from '@/components/ui/kbd'
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from '@/components/ui/menu'
+import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from '@/components/ui/menu'
 import { Popover, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
 import { RadioGroupPrimitive, RadioPrimitive } from '@/components/ui/radio-group'
 import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control'
@@ -157,6 +157,41 @@ function MenuButton() {
   return <Button variant="ghost" size="icon" aria-label="Open menu" onClick={toggleSidebar}><MenuIcon /></Button>
 }
 
+/** The title is the switcher: My tasks, All tasks, any project, or a new one. */
+function ScopeMenu({ title }: { title: string }) {
+  const scope = useStore((s) => s.scope)
+  const projects = useStore((s) => s.projects)
+  const tasks = useStore((s) => s.tasks)
+  const me = useStore((s) => s.me)
+  const open = useMemo(() => {
+    const m = new Map<string, number>(); let mine = 0, all = 0
+    for (const t of tasks) { if (t.status === 'done') continue; all++; m.set(t.project, (m.get(t.project) ?? 0) + 1); if (t.assignee === me) mine++ }
+    return { m, mine, all }
+  }, [tasks, me])
+  const is = (id: string) => scope.kind === 'project' && scope.id === id
+  const Count = ({ n }: { n?: number }) => (n ? <span className="ml-auto pl-6 text-xs tabular-nums text-muted-foreground">{n}</span> : null)
+  const cur = scope.kind === 'project' && scope.id !== GENERAL_ID ? projects.find((p) => p.id === scope.id) : null
+  return (
+    <Menu>
+      <MenuTrigger render={<Button variant="ghost" size="lg" className="-ml-2 max-w-[22rem] gap-1.5 px-2 text-lg font-semibold tracking-tight" aria-label={`${title}. Switch project`} />}>
+        <span className="truncate">{title}</span><ChevronsUpDownIcon className="size-4 shrink-0 opacity-50" />
+      </MenuTrigger>
+      <MenuPopup align="start" className="min-w-56">
+        <MenuItem onClick={() => setScope({ kind: 'mine' })}><TargetIcon />My tasks{scope.kind === 'mine' ? <CheckIcon className="ml-auto" /> : <Count n={open.mine} />}</MenuItem>
+        <MenuItem onClick={() => setScope({ kind: 'all' })}><InboxIcon />All tasks{scope.kind === 'all' ? <CheckIcon className="ml-auto" /> : <Count n={open.all} />}</MenuItem>
+        <MenuSeparator />
+        <MenuItem onClick={() => setScope({ kind: 'project', id: GENERAL_ID })}><ProjectDot hue={null} />General{is(GENERAL_ID) ? <CheckIcon className="ml-auto" /> : <Count n={open.m.get(GENERAL_ID)} />}</MenuItem>
+        {projects.map((p) => (
+          <MenuItem key={p.id} onClick={() => setScope({ kind: 'project', id: p.id })}><ProjectDot hue={p.hue} /><span className="truncate">{p.name}</span>{is(p.id) ? <CheckIcon className="ml-auto" /> : <Count n={open.m.get(p.id)} />}</MenuItem>
+        ))}
+        <MenuSeparator />
+        <MenuItem onClick={() => setState({ projectDialog: { mode: 'new' } })}><PlusIcon />New project</MenuItem>
+        {cur ? <MenuItem onClick={() => setState({ projectDialog: { mode: 'edit', id: cur.id } })}><PencilIcon />Edit {cur.name}</MenuItem> : null}
+      </MenuPopup>
+    </Menu>
+  )
+}
+
 export function Toolbar() {
   const { title, stat } = useScopeTitle()
   const view = useStore((s) => s.view)
@@ -179,7 +214,7 @@ export function Toolbar() {
     <header className="flex shrink-0 flex-col gap-3 px-4 pt-3.5 pb-1.5 sm:pl-5">
       <div className="flex min-h-9 items-center gap-3.5">
         <SidebarTrigger className="md:hidden" />
-        <h1 className="min-w-0 truncate text-lg leading-tight font-semibold tracking-tight">{title}</h1>
+        <h1 className="m-0 min-w-0 max-w-[22rem] shrink-0 text-lg leading-tight font-semibold tracking-tight"><ScopeMenu title={title} /></h1>
         {progress}
         <span className="grow" />
         <Button variant="ghost" size="sm" className="text-muted-foreground max-sm:hidden" onClick={() => openPalette('root', targetTaskId())} title="Command menu (⌘K)">
