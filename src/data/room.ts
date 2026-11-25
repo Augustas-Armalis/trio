@@ -103,11 +103,19 @@ export function createRoom(secret: string): Backend {
     for (const k of ['tasks', 'projects'] as Coll[]) for (const d of cache[k] ?? []) mem[k].set(d.id, d)
     for (const [k, t] of cache.gone ?? []) gone.set(k, t)
   }
-  // What this browser already had (from before it joined) becomes part of the shared board.
-  for (const k of ['tasks', 'projects'] as Coll[]) {
-    const raw = safe(() => localStorage.getItem(`trio:v1:${k}`), null)
-    for (const d of (raw ? safe(() => JSON.parse(raw) as Stamped[], []) : [])) if (!mem[k].has(d.id)) mem[k].set(d.id, { ...d, _t: Number(d.updatedAt ?? d.createdAt ?? 1) || 1 })
+  // What this browser held before it joined (local-only days) is added to the shared board ONCE, then dropped.
+  // Doing it on every load would bring deleted tasks back, because the old copy never learns about deletes.
+  const IMPORTED = 'trio:room-imported'
+  if (!safe(() => localStorage.getItem(IMPORTED), null)) {
+    for (const k of ['tasks', 'projects'] as Coll[]) {
+      const raw = safe(() => localStorage.getItem(`trio:v1:${k}`), null)
+      for (const d of (raw ? safe(() => JSON.parse(raw) as Stamped[], []) : [])) {
+        if (!mem[k].has(d.id) && !gone.has(`${k}/${d.id}`)) mem[k].set(d.id, { ...d, _t: Number(d.updatedAt ?? d.createdAt ?? 1) || 1 })
+      }
+    }
+    persist()
   }
+  safe(() => { localStorage.setItem(IMPORTED, '1'); localStorage.removeItem('trio:v1:tasks'); localStorage.removeItem('trio:v1:projects') }, undefined)
 
   /** Apply one decoded record. Returns true when it changed what we show. */
   const apply = (p: Payload): boolean => {
