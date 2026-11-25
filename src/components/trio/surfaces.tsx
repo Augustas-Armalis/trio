@@ -1,8 +1,9 @@
-import { CalendarIcon, XIcon } from 'lucide-react'
+import { CalendarIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person, Priority, Status, Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES } from '@/data/people'
-import { closeCompose, closeTask, createTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore } from '@/data/store'
+import { closeCompose, closeTask, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
 import { dueLabel, timeAgo } from '@/lib/dates'
 import { PRESETS } from '@/lib/presets'
 import { cn, } from '@/lib/utils'
@@ -182,7 +183,7 @@ export function TaskSheet() {
   }
   return (
     <Sheet open={!!id} onOpenChange={onOpenChange}>
-      <SheetPopup side="right" variant="inset" className="sm:max-w-lg" showCloseButton={false} aria-label="Task details">
+      <SheetPopup side="right" variant="inset" className="outline-none focus-visible:outline-none sm:max-w-lg" showCloseButton={false} aria-label="Task details">
         {shown ? <DetailBody key={shown.id} task={shown} /> : null}
       </SheetPopup>
     </Sheet>
@@ -200,9 +201,14 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
   const edit = (b: string) => { dirty.current = true; setBody(b); save(b) }
   const { add, busy } = useImages(task.images, (imgs) => updateTask(task.id, { images: imgs }))
   const Title = phone ? DrawerTitle : SheetTitle
+  const order = useTaskOrder()
+  const pos = order.indexOf(task.id)
+  const prev = pos > 0 ? order[pos - 1] : null
+  const next = pos >= 0 && pos < order.length - 1 ? order[pos + 1] : null
+  const isDone = task.status === 'done'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <motion.div className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>
       <Title className="sr-only">{titleOf(task)}</Title>
       <div className="flex shrink-0 items-center gap-1 px-4 pt-3 pb-1 sm:px-5">
         <span className="text-sm text-muted-foreground">{projectName(projects, task.project)}</span>
@@ -213,8 +219,18 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
           className="inline-flex h-8 items-center rounded-md px-1.5 text-sm font-medium text-foreground/80 outline-none transition-colors active:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-accent"
         >{task.key}</button>
         <span className="grow" />
-        <TaskMenu task={task} className="opacity-100" />
-        {phone ? null : <Button variant="ghost" size="icon-sm" aria-label="Close" onClick={closeTask}><XIcon /></Button>}
+        {pos >= 0 ? <span className="mr-1 text-xs tabular-nums text-muted-foreground max-sm:hidden">{pos + 1} / {order.length}</span> : null}
+        <Button variant="ghost" size={phone ? 'icon-xl' : 'icon-sm'} aria-label="Previous task" title="Previous (K)" disabled={!prev} onClick={() => prev && openTask(prev)}><ChevronUpIcon /></Button>
+        <Button variant="ghost" size={phone ? 'icon-xl' : 'icon-sm'} aria-label="Next task" title="Next (J)" disabled={!next} onClick={() => next && openTask(next)}><ChevronDownIcon /></Button>
+        {phone ? <TaskMenu task={task} /> : (
+          <>
+            <span className="mx-1 h-4 w-px bg-border" />
+            <Button variant="ghost" size="sm" onClick={() => toggleDone(task.id)} title={isDone ? 'Reopen (X)' : 'Mark done (X)'}><CheckIcon />{isDone ? 'Reopen' : 'Done'}</Button>
+            <Button variant="ghost" size="icon-sm" aria-label="Delete task" title="Delete (⌫)" onClick={() => deleteTask(task.id)}><Trash2Icon /></Button>
+            <TaskMenu task={task} className="opacity-100" />
+            <Button variant="ghost" size="icon-sm" aria-label="Close" title="Close (Esc)" onClick={closeTask}><XIcon /></Button>
+          </>
+        )}
       </div>
       <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-5 pt-3 pb-8 sm:px-6 [&_textarea]:touch-auto">
         <TaskText big value={body} onChange={edit} onFiles={add} />
@@ -232,8 +248,9 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
         </dl>
       </div>
       {phone ? (
-        <div className="shrink-0 border-t bg-popover px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          <Button size="xl" variant={task.status === 'done' ? 'secondary' : 'default'} className="w-full" onClick={() => { navigator.vibrate?.(8); toggleDone(task.id) }}>
+        <div className="flex shrink-0 gap-2 border-t bg-popover px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          <Button size="icon-xl" variant="secondary" aria-label="Delete task" onClick={() => deleteTask(task.id)}><Trash2Icon /></Button>
+          <Button size="xl" variant={task.status === 'done' ? 'secondary' : 'default'} className="min-w-0 flex-1" onClick={() => { navigator.vibrate?.(8); toggleDone(task.id) }}>
             <StatusIcon status={task.status === 'done' ? 'todo' : 'done'} size={20} />{task.status === 'done' ? 'Reopen' : 'Mark done'}
           </Button>
         </div>
@@ -242,7 +259,7 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
         {task.createdBy ? `Created by ${PERSON[task.createdBy].name}` : 'Created'} · {timeAgo(task.createdAt)}
         {task.updatedAt > task.createdAt + 60000 ? ` · edited ${timeAgo(task.updatedAt)}` : ''}
       </div>
-    </div>
+    </motion.div>
   )
 }
 

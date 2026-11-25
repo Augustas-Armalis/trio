@@ -1,9 +1,9 @@
-import { CalendarDaysIcon, ChevronsUpDownIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
+import { CalendarDaysIcon, ChevronsUpDownIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, KeyboardIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import type { GroupBy, Priority, SortBy, ViewKind } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES } from '@/data/people'
-import { openCompose, setMe, setScope, setState, useStore } from '@/data/store'
+import { openCompose, openPalette, setMe, setScope, setState, targetTaskId, useStore } from '@/data/store'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -182,6 +182,10 @@ export function Toolbar() {
         <h1 className="min-w-0 truncate text-lg leading-tight font-semibold tracking-tight">{title}</h1>
         {progress}
         <span className="grow" />
+        <Button variant="ghost" size="sm" className="text-muted-foreground max-sm:hidden" onClick={() => openPalette('root', targetTaskId())} title="Command menu (⌘K)">
+          <SearchIcon />Search or run…<Kbd className="ml-1">⌘K</Kbd>
+        </Button>
+        <Button variant="ghost" size="icon-sm" className="text-muted-foreground max-sm:hidden" aria-label="Keyboard shortcuts" title="Shortcuts (?)" onClick={() => setState({ shortcutsOpen: true })}><KeyboardIcon /></Button>
         <Button onClick={() => openCompose()}><PlusIcon />New task<Kbd className="ml-1 bg-black/8 text-primary-foreground/60">C</Kbd></Button>
       </div>
       <div className="flex min-h-9 items-center gap-3">

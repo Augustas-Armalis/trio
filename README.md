@@ -13,7 +13,11 @@ Built in the house stack: **React 19, Tailwind v4, [coss ui](https://coss.com/ui
 - **Status ring.** Backlog, To do, In progress, Done, Escalated. The ring is the status, the progress (the amber arc) and the done button.
 - **Projects.** Group tasks, or leave them in General. Create one empty, or pick existing tasks to click into it.
 - **Three views.** List (group by status, person, priority or date), Board, Calendar. Filter by person and priority; search with `/`.
-- **Keys (desktop).** `C` new task, `/` search, `1` `2` `3` views, `X` on a focused row marks it done, `Cmd+Enter` creates.
+- **Hover actions.** Hover a row: the key turns into a select checkbox, and Delete (with Undo) and the ⋯ menu (status, priority, assign, due, move, duplicate, delete) appear. Tap the ring to mark done.
+- **Select many.** Tick rows (or `Cmd`/`Shift` click, `Cmd+A`) and a bar appears: Done, Status, Priority, Assign, Due, Delete.
+- **Command menu.** `Cmd+K` searches tasks by title or key and runs any action. With a task open or focused it acts on that task.
+- **Task view.** Shows `n / N`, previous and next, Done, Delete, copy key, menu. On a phone: prev/next in the header, Delete and Mark done at the bottom.
+- **Keys (desktop).** `?` shows them all. `C` new, `/` search, `1` `2` `3` views, `J` `K` move, `X` done, `S` `P` `A` `D` `M` status, priority, assign, due, move, `Delete` removes (Undo), `Cmd+Enter` creates.
 
 ## Issue keys
 

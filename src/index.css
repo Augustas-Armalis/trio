@@ -310,6 +310,8 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; -webkit-
 * { scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.14) transparent; }
 .is-dragging, .is-dragging * { cursor: grabbing !important; user-select: none !important; }
 .tabular { font-variant-numeric: tabular-nums; }
+/* Toasts rise above the bulk-action bar instead of covering it. */
+body:has([role="toolbar"][aria-label$="selected"]) [data-slot="toast-viewport"] { bottom: 5.25rem !important; }
 @media (max-width: 639px) {
   [data-slot="toast-viewport"] { bottom: calc(5.25rem + env(safe-area-inset-bottom)) !important; }
   .tabular-nums { font-variant-numeric: tabular-nums; }

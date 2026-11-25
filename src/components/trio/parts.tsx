@@ -1,8 +1,8 @@
-import { CalendarIcon, ChevronLeftIcon, ImageIcon, Link2Icon, MoreHorizontalIcon } from 'lucide-react'
+import { CalendarIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Icon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
-import { actionsCloseBlocked, deleteTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
+import { actionsCloseBlocked, deleteTask, duplicateTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
 import { findLinks } from '@/lib/util'
 import { cn } from '@/lib/utils'
 import { PRESETS } from '@/lib/presets'
@@ -88,7 +88,8 @@ export function TaskMenu({ task, className }: { task: Task; className?: string }
             </MenuSubPopup>
           </MenuSub>
           <MenuSeparator />
-          <MenuItem variant="destructive" onClick={() => deleteTask(task.id)}>Delete</MenuItem>
+          <MenuItem onClick={() => duplicateTask(task.id)}><CopyIcon />Duplicate</MenuItem>
+          <MenuItem variant="destructive" onClick={() => deleteTask(task.id)}><Trash2Icon />Delete</MenuItem>
         </MenuPopup>
       </Menu>
     </span>
@@ -132,7 +133,8 @@ export function ActionsDrawer() {
                 <PickItem chevron hint={shown.due ? shown.due.slice(5) : 'None'} onClick={() => setView('due')}><span className="grid size-6 shrink-0 place-items-center"><CalendarIcon className="size-5 text-muted-foreground" /></span>Due date</PickItem>
                 <PickItem chevron hint={projectName} onClick={() => setView('project')}><span className="grid size-6 shrink-0 place-items-center"><ProjectDot hue={null} size={10} /></span>Move to project</PickItem>
                 <div className="my-1 h-px bg-border" />
-                <PickItem danger onClick={() => { deleteTask(shown.id); close() }}>Delete</PickItem>
+                <PickItem onClick={() => { duplicateTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><CopyIcon className="size-5 text-muted-foreground" /></span>Duplicate</PickItem>
+                <PickItem danger onClick={() => { deleteTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><Trash2Icon className="size-5" /></span>Delete</PickItem>
               </div>
             ) : view === 'status' ? <StatusList status={shown.status} onPick={(s) => { setStatus(shown.id, s); close() }} />
               : view === 'priority' ? <PriorityList priority={shown.priority} onPick={(p) => { updateTask(shown.id, { priority: p }); close() }} />
@@ -153,6 +155,13 @@ export function TaskMeta({ task, menu = true }: { task: Task; menu?: boolean }) 
       <PriorityPicker variant="icon" priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} />
       <DuePicker variant="icon" due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} />
       <AssigneePicker variant="icon" who={task.assignee} onPick={(p) => updateTask(task.id, { assignee: p })} />
+      {menu ? (
+        <Button
+          variant="ghost" size="icon-sm" aria-label={`Delete ${task.key}`} title="Delete (you can undo)"
+          className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 max-sm:hidden"
+          onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }} onPointerDown={stop}
+        ><Trash2Icon /></Button>
+      ) : null}
       {menu ? <TaskMenu task={task} className="max-sm:hidden" /> : null}
     </>
   )

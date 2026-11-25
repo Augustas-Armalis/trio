@@ -23,6 +23,7 @@ type PickerProps = {
   label: ReactNode
   button?: Pick<ButtonProps, 'variant' | 'size' | 'className'> & { 'aria-label'?: string }
   align?: 'start' | 'center' | 'end'
+  side?: 'top' | 'bottom'
   popClassName?: string
   children: (close: () => void) => ReactNode
 }
@@ -31,7 +32,7 @@ type PickerProps = {
  * One picker, two shapes. Mouse: a popover that grows from its trigger. Finger: a bottom drawer with
  * big rows you can swipe away. Clicks inside never reach the row or card underneath.
  */
-export function Picker({ title, label, button, align = 'start', popClassName, children }: PickerProps) {
+export function Picker({ title, label, button, align = 'start', side = 'bottom', popClassName, children }: PickerProps) {
   const phone = useIsPhone()
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
@@ -49,7 +50,7 @@ export function Picker({ title, label, button, align = 'start', popClassName, ch
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger render={trigger}>{label}</PopoverTrigger>
-          <PopoverPopup align={align} className={cn('w-auto min-w-48 p-1.5', popClassName)}>{children(close)}</PopoverPopup>
+          <PopoverPopup align={align} side={side} className={cn('w-auto min-w-48 p-1.5', popClassName)}>{children(close)}</PopoverPopup>
         </Popover>
       )}
     </span>
@@ -79,7 +80,7 @@ const fieldBtn = { variant: 'ghost', size: 'sm', className: 'justify-start' } as
 
 /* ---------------------------------------------------------------- status */
 
-export function StatusList({ status, onPick }: { status: Status; onPick: (s: Status) => void }) {
+export function StatusList({ status, onPick }: { status: Status | null; onPick: (s: Status) => void }) {
   return (
     <div role="listbox" className="flex flex-col gap-px">
       {STATUSES.map((s) => (
@@ -105,7 +106,7 @@ export function StatusPicker({ status, progress, onPick, variant = 'field', pill
 
 /* ---------------------------------------------------------------- priority */
 
-export function PriorityList({ priority, onPick }: { priority: Priority; onPick: (p: Priority) => void }) {
+export function PriorityList({ priority, onPick }: { priority: Priority | null; onPick: (p: Priority) => void }) {
   return (
     <div role="listbox" className="flex flex-col gap-px">
       {PRIORITIES.map((p) => (

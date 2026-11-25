@@ -9,6 +9,7 @@ import { splitBody, uid } from '../lib/util'
 
 export type ToastAction = { label: string; run: () => void }
 export type ComposeInit = { status?: Status; due?: string | null; project?: string; assignee?: Person | null; priority?: Priority }
+export type PalettePage = 'root' | 'status' | 'priority' | 'assignee' | 'due' | 'project'
 export type ProjectDialog = { mode: 'new' } | { mode: 'edit'; id: string }
 
 export interface State {
@@ -33,6 +34,9 @@ export interface State {
   projectDialog: ProjectDialog | null
   lightbox: string | null
   actionsFor: string | null
+  selected: string[]
+  palette: { page: PalettePage; target: string | null } | null
+  shortcutsOpen: boolean
 }
 
 const PREF_KEYS = ['scope', 'view', 'group', 'sort', 'fPeople', 'fPriority'] as const
@@ -43,7 +47,7 @@ const readPrefs = (): Partial<State> => {
 let state: State = {
   ready: false, mode: 'local', conn: 'connecting', tasks: [], projects: [], me: null, today: todayStr(),
   scope: { kind: 'all' }, view: 'list', group: 'status', sort: 'manual', fPeople: [], fPriority: [], q: '',
-  openTaskId: null, compose: null, projectDialog: null, lightbox: null, actionsFor: null,
+  openTaskId: null, compose: null, projectDialog: null, lightbox: null, actionsFor: null, selected: [], palette: null, shortcutsOpen: false,
   ...readPrefs(),
 }
 const listeners = new Set<() => void>()
@@ -404,6 +408,57 @@ export function closeTask() {
   if (location.hash.startsWith('#t-')) setHash('')
 }
 
+/* ---------------------------------------------------------------- selection, bulk, duplicate, palette */
+
+export function toggleSelect(id: string) {
+  setState((s) => ({ selected: s.selected.includes(id) ? s.selected.filter((x) => x !== id) : [...s.selected, id] }))
+}
+export const selectMany = (ids: string[]) => setState({ selected: ids })
+export const clearSelection = () => setState((s) => (s.selected.length ? { selected: [] } : {}))
+
+export function deleteTasks(ids: string[]) {
+  const gone = getState().tasks.filter((t) => ids.includes(t.id))
+  if (!gone.length) return
+  setState((s) => ({ tasks: s.tasks.filter((t) => !ids.includes(t.id)), selected: [], openTaskId: s.openTaskId && ids.includes(s.openTaskId) ? null : s.openTaskId }))
+  if (location.hash.startsWith('#t-')) setHash('')
+  for (const t of gone) backend.remove('tasks', t.id).catch(fail('delete that task'))
+  toast(gone.length === 1 ? 'Task deleted' : `${gone.length} tasks deleted`, {
+    label: 'Undo',
+    run: () => {
+      setState((s) => ({ tasks: [...gone, ...s.tasks] }))
+      for (const t of gone) backend.set('tasks', t.id, toDoc(t)).catch(fail('restore that task'))
+    },
+  })
+}
+
+export function updateTasks(ids: string[], patch: (t: Task) => Partial<Task>) {
+  for (const id of ids) {
+    const cur = getState().tasks.find((t) => t.id === id)
+    if (cur) updateTask(id, patch(cur))
+  }
+}
+
+export function duplicateTask(id: string) {
+  const t = getState().tasks.find((x) => x.id === id)
+  if (!t) return
+  const nid = createTask({ body: t.body, project: t.project, priority: t.priority, assignee: t.assignee, due: t.due, images: t.images })
+  const key = getState().tasks.find((x) => x.id === nid)?.key
+  toast(key ? `${key} created` : 'Task duplicated', { label: 'Open', run: () => openTask(nid) })
+}
+
+export function openPalette(page: PalettePage = 'root', target: string | null = null) {
+  setState({ palette: { page, target } })
+}
+export const closePalette = () => setState({ palette: null })
+
+/** The task keyboard shortcuts act on: the open one, else the one with focus. */
+export function targetTaskId(): string | null {
+  const s = getState()
+  if (s.openTaskId) return s.openTaskId
+  const row = (document.activeElement as HTMLElement | null)?.closest('[data-task], [data-card]')
+  return row?.getAttribute('data-task') ?? row?.getAttribute('data-card') ?? null
+}
+
 /* ---------------------------------------------------------------- derived */
 
 export function sortTasks(list: Task[], sort: SortBy): Task[] {
@@ -433,6 +488,17 @@ export function useVisibleTasks(): Task[] {
       return true
     })
   }, [tasks, scope, fPeople, fPriority, q, me])
+}
+
+const ORDER: Status[] = ['escalated', 'in_progress', 'todo', 'backlog', 'done']
+/** Visible tasks in the order the list shows them: status groups first, then the chosen sort. */
+export function useTaskOrder(): string[] {
+  const tasks = useVisibleTasks()
+  const sort = useStore((s) => s.sort)
+  return useMemo(() => {
+    const sorted = sortTasks(tasks, sort)
+    return ORDER.flatMap((st) => sorted.filter((t) => t.status === st)).map((t) => t.id)
+  }, [tasks, sort])
 }
 
 export const titleOf = (t: Task) => splitBody(t.body).title || 'Untitled task'

@@ -1,12 +1,13 @@
-import { animate, AnimatePresence, motion, useMotionValue, useTransform } from 'motion/react'
+import { animate, AnimatePresence, LayoutGroup, motion, useMotionValue, useTransform } from 'motion/react'
 import { CalendarIcon, ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react'
-import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Priority, Status, Task } from '@/types'
 import { PEOPLE, PERSON, PRIORITIES, STATUS } from '@/data/people'
-import { openActions, openCompose, openTask, setState, sortTasks, toggleDone, useStore, type ComposeInit } from '@/data/store'
+import { openActions, openCompose, openTask, setState, sortTasks, toggleDone, toggleSelect, useStore, type ComposeInit } from '@/data/store'
 import { addDays, diffDays } from '@/lib/dates'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -45,7 +46,9 @@ function usePressActions(taskId: string) {
 }
 
 /** Phone row: swipe right to complete. The row is the finger while it is down; on release a spring seeded with the swipe velocity takes over. */
-export function TaskRow({ task, showProject, fancy }: { task: Task; showProject: boolean; fancy: boolean }) {
+export function TaskRow({ task, showProject, fancy, index = 0, intro = false }: { task: Task; showProject: boolean; fancy: boolean; index?: number; intro?: boolean }) {
+  const selected = useStore((s) => s.selected.includes(task.id))
+  const anySelected = useStore((s) => s.selected.length > 0)
   const touch = useIsTouch()
   const phone = useIsPhone()
   const done = task.status === 'done'
@@ -56,16 +59,24 @@ export function TaskRow({ task, showProject, fancy }: { task: Task; showProject:
   const dragged = useRef(false)
   const press = usePressActions(task.id)
 
-  const open = () => { if (dragged.current || press.fired.current) { dragged.current = false; press.fired.current = false; return } openTask(task.id) }
+  const open = (e?: React.MouseEvent) => {
+    if (dragged.current || press.fired.current) { dragged.current = false; press.fired.current = false; return }
+    if (e && (e.metaKey || e.ctrlKey || e.shiftKey)) { e.preventDefault(); toggleSelect(task.id); return }
+    openTask(task.id)
+  }
   const content = (
     <>
       <div className="relative z-10"><StatusBtn task={task} /></div>
       <div className="min-w-0 py-2 sm:py-0">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="w-16 shrink-0 text-xs text-muted-foreground max-sm:hidden">{task.key}</span>
+          <span className="relative h-6 w-16 shrink-0 max-sm:hidden">
+            <span className={cn('absolute inset-y-0 left-0 flex items-center text-xs text-muted-foreground transition-opacity duration-150', (selected || anySelected) ? 'opacity-0' : 'group-hover/item:opacity-0')}>{task.key}</span>
+            <span className={cn('absolute inset-y-0 left-0 z-10 flex items-center transition-opacity duration-150', (selected || anySelected) ? 'opacity-100' : 'opacity-0 group-hover/item:opacity-100 has-[:focus-visible]:opacity-100')}>
+              <Checkbox checked={selected} onCheckedChange={() => toggleSelect(task.id)} aria-label={`Select ${task.key}`} />
+            </span>
+          </span>
           <button
-            type="button" data-open-task onClick={open} title={titleOf(task)}
-            onKeyDown={(e) => { if (e.key === 'x') { e.preventDefault(); toggleDone(task.id) } }}
+            type="button" data-open-task onClick={(e) => open(e)} title={titleOf(task)}
             className={cn('min-h-6 min-w-0 cursor-pointer truncate text-left text-base leading-6 outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:shadow-[inset_0_0_0_2px_var(--ring)] sm:text-sm', done && 'text-muted-foreground')}
           >{titleOf(task)}</button>
           <span className="max-sm:hidden"><Indicators task={task} /></span>
@@ -109,15 +120,16 @@ export function TaskRow({ task, showProject, fancy }: { task: Task; showProject:
       </motion.div>
     </div>
   ) : (
-    <div {...common} className={cn(rowClass, 'group/item')}>{content}</div>
+    <div {...common} className={cn(rowClass, 'group/item', selected && 'bg-accent')}>{content}</div>
   )
 
   if (!fancy) return <div className={cn(done && 'opacity-80')}>{inner}</div>
   return (
     <motion.div
-      layout="position" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE } }}
-      exit={{ opacity: 0, transition: { duration: 0.12 } }} transition={{ layout: { duration: 0.28, ease: EASE } }}
-      className={cn(!touch && 'group/item')}
+      layoutId={`row-${task.id}`} initial={{ opacity: 0, y: intro ? 8 : 4 }}
+      animate={{ opacity: 1, y: 0, transition: { duration: 0.32, ease: EASE, delay: intro ? Math.min(index, 14) * 0.03 : 0 } }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }} transition={{ layout: { duration: 0.34, ease: EASE } }}
+      className={cn(!touch && 'group/item', 'relative')}
     >
       {inner}
     </motion.div>
@@ -147,6 +159,8 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
   const now = useStore((s) => s.today)
   const phone = useIsPhone()
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(['done']))
+  const [intro, setIntro] = useState(true)
+  useEffect(() => { const t = setTimeout(() => setIntro(false), 900); return () => clearTimeout(t) }, [])
   const fancy = tasks.length < 150
 
   const groups = useMemo<Group[]>(() => {
@@ -188,6 +202,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
   if (!tasks.length) return <EmptyState filtered={filtered} />
 
   return (
+    <LayoutGroup id="list">
     <div className="h-full overflow-y-auto overscroll-contain px-1.5 pb-6 sm:px-3 sm:pb-24">
       {groups.map((g) => {
         const isCollapsed = collapsed.has(g.key)
@@ -202,20 +217,27 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
               </button>
               <Button variant="ghost" size="icon-sm" className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 [section:hover_&]:opacity-100" aria-label={`Add task to ${g.label}`} onClick={() => openCompose(g.compose)}><PlusIcon /></Button>
             </header>
-            {!isCollapsed && (
-              <div className="flex flex-col gap-px">
-                {fancy ? (
-                  <AnimatePresence initial={false} mode="popLayout">
-                    {g.tasks.map((t) => <TaskRow key={t.id} task={t} showProject={showProject} fancy />)}
-                  </AnimatePresence>
-                ) : g.tasks.map((t) => <TaskRow key={t.id} task={t} showProject={showProject} fancy={false} />)}
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isCollapsed && (
+                <motion.div
+                  key="body" className="flex flex-col gap-px overflow-hidden" style={{ overflow: fancy ? 'hidden' : undefined }}
+                  initial={fancy ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={fancy ? { height: 0, opacity: 0 } : undefined}
+                  transition={{ duration: 0.3, ease: EASE }}
+                >
+                  {fancy ? (
+                    <AnimatePresence initial mode="popLayout">
+                      {g.tasks.map((t, i) => <TaskRow key={t.id} task={t} showProject={showProject} fancy index={i} intro={intro} />)}
+                    </AnimatePresence>
+                  ) : g.tasks.map((t) => <TaskRow key={t.id} task={t} showProject={showProject} fancy={false} />)}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         )
       })}
       {phone ? null : null}
     </div>
+    </LayoutGroup>
   )
 }
 
