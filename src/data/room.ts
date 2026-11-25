@@ -16,6 +16,15 @@ import type { Person } from '../types'
  */
 
 const KEY = 'trio:room'
+/**
+ * The board everyone shares when they simply open the public site. It is deliberately not secret: anyone who has the
+ * site's link can use the board (that is the point). Private boards still work through a personal #room= link.
+ */
+const PUBLIC_ROOM = 'A1-zaOpjF4TDk7RaBTzzP8zt5w4-1Uf5'
+/** On the public site every visitor joins the shared board; locally (dev, tests, a file) nothing syncs unless asked. */
+export const publicSite = () => /\.github\.io$/.test(location.hostname)
+export const activeRoom = (): string | null => loadRoom() ?? (publicSite() ? PUBLIC_ROOM : null)
+export const onPublicRoom = () => loadRoom() === null && publicSite()
 const KIND = 30078
 const RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.primal.net', 'wss://offchain.pub']
 /** Relays refuse big events, so pictures are kept small in a shared room. */

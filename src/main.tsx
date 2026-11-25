@@ -3,7 +3,7 @@ import './index.css'
 import { App } from './App'
 import { connectCloud, createLocal } from './data/backend'
 import { makeFixtures } from './data/fixtures'
-import { consumeRoomLink, createRoom, loadRoom } from './data/room'
+import { activeRoom, consumeRoomLink, createRoom } from './data/room'
 import { init } from './data/store'
 
 async function boot() {
@@ -20,7 +20,7 @@ async function boot() {
   const cloud = fx === null ? await connectCloud().catch(() => null) : null
   // A room link (#room=...) turns on shared sync with nothing to set up.
   if (fx === null && !cloud) consumeRoomLink()
-  const room = fx === null && !cloud ? loadRoom() : null
+  const room = fx === null && !cloud ? activeRoom() : null
   const backend = cloud ?? (room ? createRoom(room) : createLocal(fx !== null ? { persist: false, seed: makeFixtures(Number(fx) || 0) } : { persist: true }))
   await init(backend)
 }
