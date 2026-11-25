@@ -105,7 +105,8 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
   })
 
   return (
-    <div className="flex h-full items-start gap-2.5 overflow-auto px-4 pt-1.5 pb-4">
+    <div className="h-full overflow-auto overscroll-contain px-4 pb-4">
+    <div className="flex min-h-full items-stretch gap-2.5 pt-1.5">
       {STATUSES.map((s) => {
         const list = cols.get(s.id)!
         const over = drop?.status === s.id
@@ -113,15 +114,15 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
         let k = 0
         for (const t of list) order.set(t.id, t.id === dragId ? -1 : k++)
         return (
-          <section key={s.id} aria-label={s.label} data-col={s.id} className={cn('flex max-h-full min-w-55 max-w-90 flex-1 basis-55 flex-col rounded-2xl bg-muted p-1.5 transition-colors', over && 'bg-foreground/9')}>
-            <header className="flex h-9 shrink-0 items-center gap-2 pr-1 pl-2.5">
+          <section key={s.id} aria-label={s.label} data-col={s.id} className={cn('flex min-w-55 max-w-90 flex-1 basis-55 flex-col rounded-2xl bg-muted p-1.5 transition-colors', over && 'bg-foreground/9')}>
+            <header className="sticky top-0 z-20 -mx-0.5 flex h-9 shrink-0 items-center gap-2 rounded-xl bg-[#1b1b1b] pr-1.5 pl-3">
               <StatusIcon status={s.id} progress={50} size={18} />
               <span className="font-semibold">{s.label}</span>
               <span className="tabular-nums text-xs text-muted-foreground">{list.length}</span>
               <span className="grow" />
               <Button variant="ghost" size="icon-sm" aria-label={`Add task to ${s.label}`} onClick={() => openCompose({ status: s.id })}><PlusIcon /></Button>
             </header>
-            <div className="flex min-h-12 flex-col gap-1.5 overflow-y-auto pb-0.5">
+            <div className="flex min-h-12 flex-1 flex-col gap-1.5 pt-1 pb-0.5">
               {list.map((t) => (
                 <div key={t.id} className="relative">
                   {over && order.get(t.id) === drop!.index ? <div className="relative z-10 -my-px mx-1 h-0.5 rounded-full bg-foreground/60" /> : null}
@@ -143,6 +144,7 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
         )
       })}
       {ghost}
+    </div>
     </div>
   )
 }

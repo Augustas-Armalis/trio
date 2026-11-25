@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person, Priority, Status, Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES } from '@/data/people'
-import { closeCompose, closeTask, copyTaskLink, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
+import { closeCompose, closeTask, copyTaskLink, copyTasksTo, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
 import { dueLabel, timeAgo } from '@/lib/dates'
 import { PRESETS } from '@/lib/presets'
 import { cn, } from '@/lib/utils'
@@ -302,15 +302,21 @@ function ProjectBody() {
   const codeTaken = shownCode === GENERAL_CODE || projects.some((p) => p.id !== edit?.id && p.code === shownCode)
   const codeOk = CODE_RE.test(shownCode) && !codeTaken
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [q, setQ] = useState('')
+  const [how, setHow] = useState<'move' | 'copy'>('move')
   const [confirm, setConfirm] = useState(false)
-  const movable = useMemo(() => tasks.filter((t) => t.project === GENERAL_ID && t.status !== 'done').slice(0, 200), [tasks])
+  const movable = useMemo(() => {
+    const n = q.trim().toLowerCase()
+    return tasks.filter((t) => t.status !== 'done' && (!n || t.body.toLowerCase().includes(n) || t.key.toLowerCase().includes(n))).slice(0, 300)
+  }, [tasks, q])
+  const allCount = useMemo(() => tasks.filter((t) => t.status !== 'done').length, [tasks])
   const count = edit ? tasks.filter((t) => t.project === edit.id).length : 0
   const close = () => setState({ projectDialog: null })
   const submit = () => {
     if (!name.trim() || !codeOk) return
     if (edit) { updateProject(edit.id, { name, code: shownCode }); return close() }
     const id = createProject(name, shownCode)
-    if (picked.size) moveTasksToProject([...picked], id)
+    if (picked.size) (how === 'copy' ? copyTasksTo : moveTasksToProject)([...picked], id)
     setScope({ kind: 'project', id })
     close()
   }
@@ -324,24 +330,38 @@ function ProjectBody() {
         <Input id="pname" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Website relaunch" autoFocus maxLength={60} autoComplete="off" size="lg" />
         <label htmlFor="pcode" className="mt-4 mb-1.5 block text-sm text-muted-foreground">Code <span className="opacity-60">for issue keys</span></label>
         <div className="flex items-center gap-3">
-          <Input id="pcode" value={shownCode} onChange={(e) => { setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5)); setCodeTouched(true) }} maxLength={5} autoComplete="off" autoCapitalize="characters" spellCheck={false} size="lg" className="w-28 tabular-nums uppercase" aria-invalid={!codeOk} />
+          <Input id="pcode" value={shownCode} onChange={(e) => { setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3)); setCodeTouched(true) }} maxLength={3} autoComplete="off" autoCapitalize="characters" spellCheck={false} size="lg" className="w-28 tabular-nums uppercase" aria-invalid={!codeOk} />
           <span className={cn('text-sm', codeOk ? 'text-muted-foreground' : 'text-destructive-foreground')}>
-            {codeOk ? `New tasks get ${shownCode}-1, ${shownCode}-2…` : codeTaken ? 'That code is already used.' : 'Use 2 to 5 letters or numbers, starting with a letter.'}
+            {codeOk ? `New tasks get ${shownCode}-001, ${shownCode}-002…` : codeTaken ? 'That code is already used.' : 'Use 2 or 3 letters or numbers, starting with a letter.'}
           </span>
         </div>
-        {!edit && movable.length ? (
+        {!edit && allCount ? (
           <>
-            <div className="mt-5 mb-1.5 flex justify-between text-sm text-muted-foreground"><span>Add existing tasks <em className="not-italic opacity-60">optional</em></span>{picked.size ? <span>{picked.size} selected</span> : null}</div>
+            <div className="mt-5 mb-1.5 flex items-center justify-between text-sm text-muted-foreground">
+              <span>Add existing tasks <em className="not-italic opacity-60">optional</em></span>
+              {picked.size ? <span>{picked.size} selected</span> : null}
+            </div>
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tasks or keys" aria-label="Search existing tasks" autoComplete="off" className="mb-1" />
             <div className="-mx-2 flex max-h-56 flex-col gap-px overflow-y-auto" role="group" aria-label="Existing tasks">
               {movable.map((t) => (
-                <button type="button" key={t.id} onClick={() => toggle(t.id)} aria-pressed={picked.has(t.id)} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-2 text-left outline-none active:bg-accent focus-visible:bg-accent sm:min-h-9 [@media(hover:hover)]:hover:bg-accent">
+                <button type="button" key={t.id} onClick={() => toggle(t.id)} aria-pressed={picked.has(t.id)} className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2 text-left outline-none active:bg-accent focus-visible:bg-accent sm:min-h-9 [@media(hover:hover)]:hover:bg-accent/60">
                   <Checkbox checked={picked.has(t.id)} tabIndex={-1} className="pointer-events-none" aria-hidden />
                   <StatusIcon status={t.status} progress={t.progress} />
+                  <span className="w-14 shrink-0 text-xs text-muted-foreground">{t.key}</span>
                   <span className="min-w-0 flex-1 truncate">{titleOf(t)}</span>
-                  <PersonAvatar who={t.assignee} size={20} />
+                  <span className="max-w-24 shrink-0 truncate text-xs text-muted-foreground">{projectName(projects, t.project)}</span>
                 </button>
               ))}
+              {!movable.length ? <p className="px-2 py-3 text-sm text-muted-foreground">No tasks match.</p> : null}
             </div>
+            {picked.size ? (
+              <div className="mt-3 flex items-center gap-2" role="radiogroup" aria-label="What to do with the selected tasks">
+                {(['move', 'copy'] as const).map((m) => (
+                  <Button key={m} type="button" role="radio" aria-checked={how === m} variant="secondary" size="sm" className={cn('rounded-full', how === m && chipOn)} onClick={() => setHow(m)}>{m === 'move' ? 'Move them here' : 'Copy them here'}</Button>
+                ))}
+                <span className="text-xs text-muted-foreground">{how === 'move' ? 'They leave their old project.' : 'The originals stay put.'}</span>
+              </div>
+            ) : null}
           </>
         ) : null}
         {edit ? <p className="mt-4 text-sm text-muted-foreground">{count} {count === 1 ? 'task' : 'tasks'} in this project. Deleting it moves them to General.</p> : null}
@@ -351,7 +371,7 @@ function ProjectBody() {
           ? <Button type="button" variant="destructive" onClick={() => { deleteProject(edit.id); close() }}>Delete and move {count} to General</Button>
           : <Button type="button" variant="ghost" className="mr-auto text-destructive-foreground" onClick={() => setConfirm(true)}>Delete project</Button>) : null}
         <DialogClose render={<Button type="button" variant="ghost" />}>Cancel</DialogClose>
-        <Button type="submit" disabled={!name.trim() || !codeOk}>{edit ? 'Save' : picked.size ? `Create with ${picked.size}` : 'Create project'}</Button>
+        <Button type="submit" disabled={!name.trim() || !codeOk}>{edit ? 'Save' : picked.size ? `Create and ${how} ${picked.size}` : 'Create project'}</Button>
       </DialogFooter>
     </form>
   )

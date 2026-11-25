@@ -2,7 +2,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 import type { GroupBy, Person, Priority, Project, Scope, SortBy, Status, Task, ViewKind } from '../types'
 import type { Backend, Conn, RawDoc } from './backend'
 import { GENERAL_ID, PRIORITY, PROJECT_HUES } from './people'
-import { CODE_RE, codeFor, deriveCode, nextNum, parseKey, uniqueCode } from '@/lib/keys'
+import { CODE_RE, LEGACY_CODE_RE, codeFor, deriveCode, makeKey, nextNum, parseKey, uniqueCode } from '@/lib/keys'
 import { today as todayStr } from '../lib/dates'
 import { toastManager } from '@/components/ui/toast'
 import { splitBody, uid } from '../lib/util'
@@ -111,7 +111,7 @@ function normProject(d: RawDoc): Project {
   return {
     id: d.id,
     name: pname,
-    code: typeof d.code === 'string' && CODE_RE.test(d.code) ? d.code : deriveCode(pname),
+    code: typeof d.code === 'string' && LEGACY_CODE_RE.test(d.code) ? d.code : deriveCode(pname),
     hue: num(d.hue, 255),
     createdAt: num(d.createdAt, 0),
     rank: num(d.rank, 0),
@@ -281,7 +281,7 @@ export function createTask(n: NewTask): string {
   const id = uid('t')
   const project = n.project ?? GENERAL_ID
   const code = codeFor(s.projects, project)
-  const key = `${code}-${nextNum(s.tasks, code)}`
+  const key = makeKey(code, nextNum(s.tasks, code))
   createdHere.add(id)
   const task: Task = {
     id, key, body: n.body.trim(), project, status,
@@ -453,6 +453,13 @@ export function updateTasks(ids: string[], patch: (t: Task) => Partial<Task>) {
     const cur = getState().tasks.find((t) => t.id === id)
     if (cur) updateTask(id, patch(cur))
   }
+}
+
+/** Copy tasks into a project and leave the originals where they are. The copies get fresh keys there. */
+export function copyTasksTo(ids: string[], project: string) {
+  const list = getState().tasks.filter((t) => ids.includes(t.id))
+  for (const t of list) createTask({ body: t.body, project, status: t.status, priority: t.priority, assignees: t.assignees, due: t.due, images: t.images })
+  if (list.length) toast(list.length === 1 ? 'Copied 1 task' : `Copied ${list.length} tasks`)
 }
 
 export function duplicateTask(id: string) {

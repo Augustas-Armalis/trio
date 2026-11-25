@@ -1,7 +1,7 @@
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect } from 'react'
-import { clearSelection, deleteTasks, getState, moveTasksToProject, selectMany, setStatus, updateTasks, useStore } from '@/data/store'
+import { clearSelection, copyTasksTo, deleteTasks, getState, moveTasksToProject, selectMany, setStatus, updateTasks, useStore } from '@/data/store'
 import { Button } from '@/components/ui/button'
 import { PersonList, Picker, PriorityList, ProjectList, StatusList, DueEditor, useIsPhone } from './picker'
 
@@ -46,13 +46,16 @@ export function BulkBar() {
               {(close) => <PriorityList priority={null} onPick={(p) => { updateTasks(getState().selected, () => ({ priority: p })); close(); clearSelection() }} />}
             </Picker>
             <Picker title="Assign to" side="top" label="Assign" button={btn}>
-              {(close) => <PersonList who={null} onPick={(p) => { updateTasks(getState().selected, () => ({ assignee: p })); close(); clearSelection() }} />}
+              {(close) => <PersonList who={null} onPick={(p) => { updateTasks(getState().selected, (t) => ({ assignees: p ? [...new Set([...t.assignees, p])] : [] })); close(); clearSelection() }} />}
             </Picker>
             <Picker title="Due date" side="top" label="Due" button={btn} popClassName="p-0 [&>div]:p-1.5">
               {(close) => <DueEditor due={null} onPick={(d) => { updateTasks(getState().selected, () => ({ due: d })); close(); clearSelection() }} />}
             </Picker>
             <Picker title="Move to project" side="top" label="Move" button={btn}>
               {(close) => <ProjectList project="" onPick={(id) => { moveTasksToProject(getState().selected, id); close(); clearSelection() }} />}
+            </Picker>
+            <Picker title="Copy to project" side="top" label="Copy to" button={btn}>
+              {(close) => <ProjectList project="" onPick={(id) => { copyTasksTo(getState().selected, id); close(); clearSelection() }} />}
             </Picker>
             <span className="mx-0.5 h-5 w-px bg-border" />
             <Button {...btn} className="text-destructive-foreground" onClick={() => deleteTasks(getState().selected)}><Trash2Icon />Delete</Button>

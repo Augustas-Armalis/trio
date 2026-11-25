@@ -2,7 +2,9 @@ import type { Project, Task } from '@/types'
 
 export const GENERAL_ID = 'general'
 export const GENERAL_CODE = 'GEN'
-export const CODE_RE = /^[A-Z][A-Z0-9]{1,4}$/
+/** Project codes are 2 or 3 characters (PRO, WEB). Older projects may still carry up to 5. */
+export const CODE_RE = /^[A-Z][A-Z0-9]{1,2}$/
+export const LEGACY_CODE_RE = /^[A-Z][A-Z0-9]{1,4}$/
 const KEY_RE = /^([A-Z][A-Z0-9]{1,4})-(\d+)$/
 
 export const parseKey = (k: string) => {
@@ -10,20 +12,23 @@ export const parseKey = (k: string) => {
   return m ? { code: m[1], num: Number(m[2]) } : null
 }
 
-/** WEB for "Website", CO for "Client onboarding", first letters of the words, 2 to 4 characters. */
+/** The first three letters of what you typed: "Website" -> WEB, "Marius Molis" -> MAR. You can retype it. */
 export function deriveCode(name: string): string {
-  const words = name.toUpperCase().replace(/[^A-Z0-9 ]+/g, ' ').trim().split(/\s+/).filter(Boolean)
-  let code = words.length >= 2 ? words.map((w) => w[0]).join('').slice(0, 4) : (words[0] ?? 'TSK').slice(0, 3)
-  if (!/^[A-Z]/.test(code)) code = 'P' + code
+  const flat = name.toUpperCase().replace(/[^A-Z0-9]+/g, '')
+  let code = flat.slice(0, 3) || 'TSK'
+  if (!/^[A-Z]/.test(code)) code = 'P' + code.slice(0, 2)
   while (code.length < 2) code += 'X'
   return code
 }
+
+/** PRO-001: three digits so keys line up; past 999 they simply grow. */
+export const makeKey = (code: string, n: number) => `${code}-${String(n).padStart(3, '0')}`
 
 export function uniqueCode(base: string, projects: Project[], ignoreId?: string): string {
   const taken = new Set(projects.filter((p) => p.id !== ignoreId).map((p) => p.code))
   taken.add(GENERAL_CODE)
   let code = base
-  for (let i = 2; taken.has(code); i++) code = base.slice(0, 5 - String(i).length) + i
+  for (let i = 2; taken.has(code); i++) code = base.slice(0, 3 - String(i).length) + i
   return code
 }
 
