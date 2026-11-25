@@ -20,7 +20,7 @@ import { Sheet, SheetPopup, SheetTitle } from '@/components/ui/sheet'
 import { Calendar } from '@/components/ui/calendar'
 import { AssigneePicker, DuePicker, PriorityPicker, ProjectPicker, StatusPicker, useIsPhone } from './picker'
 import { TaskMenu } from './parts'
-import { PhoneCompose } from './phone-compose'
+import { PhoneCompose, PhoneComposeLayer } from './phone-compose'
 import { PersonAvatar, PriorityIcon, StatusIcon } from './primitives'
 import { AddImageButton, ImageStrip, LinkChips, TaskText, useImages } from './taskText'
 import { parseYmd, ymd } from '@/lib/dates'
@@ -33,15 +33,7 @@ export function Compose() {
   const init = useStore((s) => s.compose)
   const phone = useIsPhone()
   const onOpenChange = (o: boolean) => { if (!o) closeCompose() }
-  if (phone) {
-    return (
-      <Drawer open={!!init} onOpenChange={onOpenChange}>
-        <DrawerPopup showBar className="h-[min(94dvh,var(--app-h,100dvh),46rem)]">
-          {init ? <PhoneCompose key={JSON.stringify(init)} /> : null}
-        </DrawerPopup>
-      </Drawer>
-    )
-  }
+  if (phone) return <PhoneComposeLayer open={!!init}>{init ? <PhoneCompose key={JSON.stringify(init)} init={init} /> : null}</PhoneComposeLayer>
   return (
     <Dialog open={!!init} onOpenChange={onOpenChange}>
       <DialogPopup className="sm:max-w-xl" aria-label="New task">
@@ -129,7 +121,7 @@ function ComposeBody({ phone }: { phone?: boolean }) {
                   <CalendarIcon />{custom ? dueLabel(due!, now) : 'Pick date'}
                 </PopoverTrigger>
                 <PopoverPopup align="start" className="w-auto p-2" side={phone ? 'top' : 'bottom'}>
-                  <Calendar mode="single" weekStartsOn={1} selected={due ? parseYmd(due) : undefined} defaultMonth={due ? parseYmd(due) : parseYmd(now)} onSelect={(d) => d && setDue(ymd(d))} />
+                  <Calendar mode="single" weekStartsOn={1} disabled={{ before: parseYmd(now) }} selected={due ? parseYmd(due) : undefined} defaultMonth={due ? parseYmd(due) : parseYmd(now)} onSelect={(d) => d && setDue(ymd(d))} />
                 </PopoverPopup>
               </Popover>
             </div>

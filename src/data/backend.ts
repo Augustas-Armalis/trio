@@ -7,6 +7,8 @@ export type Conn = 'connecting' | 'live' | 'slow' | 'error'
 
 export interface Backend {
   kind: 'cloud' | 'local'
+  /** What carries the sync, when it is not the Claude artifact. */
+  via?: 'github'
   subscribe(coll: Coll, cb: (docs: RawDoc[]) => void, onConn: (c: Conn) => void): () => void
   set(coll: Coll, id: string, data: Record<string, unknown>): Promise<void>
   update(coll: Coll, id: string, patch: Record<string, unknown>): Promise<void>

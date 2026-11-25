@@ -10,7 +10,8 @@ import { Drawer, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrig
 import { PersonList, PickItem, Picker } from './picker'
 import { PersonAvatar, ProjectDot } from './primitives'
 import { FilterDrawer, VIEWS, useScopeTitle } from './shell'
-import { PencilIcon } from 'lucide-react'
+import { PencilIcon, RefreshCwIcon } from 'lucide-react'
+import { openSync } from './sync'
 
 /**
  * Size the app to what is actually visible. On iOS the on-screen keyboard covers the page without resizing it, so
@@ -41,8 +42,10 @@ function useAppViewport() {
 /** Phone layout: header, content, then a dock you can reach with a thumb. Nothing floats over the content. */
 export function PhoneApp({ children }: { children: ReactNode }) {
   useAppViewport()
+  // While the full-screen create layer is up, the app behind it can't be tabbed into or read out.
+  const composing = useStore((s) => !!s.compose)
   return (
-    <div className="fixed inset-x-0 top-0 flex flex-col overflow-hidden bg-background" style={{ height: 'var(--app-h, 100dvh)', transform: 'translateY(var(--app-top, 0px))' }}>
+    <div inert={composing} className="fixed inset-x-0 top-0 flex flex-col overflow-hidden bg-background" style={{ height: 'var(--app-h, 100dvh)', transform: 'translateY(var(--app-top, 0px))' }}>
       <PhoneHeader />
       <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
       <PhoneDock />
@@ -71,6 +74,9 @@ function ScopeDrawer({ title }: { title: string }) {
   const projects = useStore((s) => s.projects)
   const tasks = useStore((s) => s.tasks)
   const me = useStore((s) => s.me)
+  const mode = useStore((s) => s.mode)
+  const via = useStore((s) => s.via)
+  const syncState = mode === 'local' ? 'Sync across devices' : via === 'github' ? 'Synced via GitHub' : 'Synced'
   const counts = useMemo(() => {
     const m = new Map<string, number>()
     let mine = 0, all = 0
@@ -110,6 +116,7 @@ function ScopeDrawer({ title }: { title: string }) {
             ))}
             <div className="my-1 h-px bg-border" />
             <PickItem onClick={() => { setOpen(false); setState({ projectDialog: { mode: 'new' } }) }}><PlusIcon className="size-5" />New project</PickItem>
+            <PickItem onClick={() => { setOpen(false); openSync() }}><span className="grid size-6 shrink-0 place-items-center"><RefreshCwIcon className="size-5 text-muted-foreground" /></span>{syncState}</PickItem>
           </div>
         </DrawerPanel>
       </DrawerPopup>

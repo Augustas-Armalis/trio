@@ -162,7 +162,7 @@ export function AddImageButton({ onFiles, busy, label = 'Add image', pill }: { o
     <>
       <input ref={ref} type="file" accept="image/*" multiple hidden onChange={(e) => { onFiles(Array.from(e.target.files ?? [])); e.target.value = '' }} />
       {pill ? (
-        <Button type="button" variant="secondary" size="icon-lg" className="shrink-0 rounded-full" aria-label="Add image" onClick={() => ref.current?.click()} disabled={busy}><ImageIcon /></Button>
+        <Button type="button" variant="secondary" size="icon" className="shrink-0 rounded-full" aria-label="Add image" onClick={() => ref.current?.click()} disabled={busy}><ImageIcon /></Button>
       ) : (
         <Button type="button" variant="ghost" onClick={() => ref.current?.click()} disabled={busy}>
           <ImageIcon />{busy ? 'Adding…' : label}

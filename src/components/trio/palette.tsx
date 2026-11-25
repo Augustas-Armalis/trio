@@ -1,4 +1,4 @@
-import { CalendarDaysIcon, CheckIcon, ClipboardCopyIcon, CopyIcon, Columns3Icon, FolderIcon, InboxIcon, KeyboardIcon, ListIcon, PlusIcon, TargetIcon, Trash2Icon, UserIcon } from 'lucide-react'
+import { RefreshCwIcon, CalendarDaysIcon, CheckIcon, ClipboardCopyIcon, CopyIcon, Columns3Icon, FolderIcon, InboxIcon, KeyboardIcon, ListIcon, PlusIcon, TargetIcon, Trash2Icon, UserIcon } from 'lucide-react'
 import { Fragment, type ReactNode, useMemo } from 'react'
 import type { Person } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
@@ -92,6 +92,7 @@ export function CommandPalette() {
         ...PEOPLE.map((p) => ({ value: `f-${p.id}`, label: `Show only ${p.name}`, icon: <PersonAvatar who={p.id} size={18} />, run: act(() => setState({ fPeople: [p.id] })) })),
         { value: 'f-clear', label: 'Clear filters', icon: <UserIcon className={ic} />, run: act(() => setState({ fPeople: [], fPriority: [], q: '' })) },
         ...PEOPLE.filter((p) => p.id !== me).map((p) => ({ value: `me-${p.id}`, label: `Switch to ${p.name}`, icon: <PersonAvatar who={p.id as Person} size={18} />, run: act(() => setMe(p.id)) })),
+        { value: 'sync', label: 'Sync across devices', icon: <RefreshCwIcon className={ic} />, run: act(() => setState({ syncOpen: true })) },
         { value: 'help', label: 'Keyboard shortcuts', icon: <KeyboardIcon className={ic} />, shortcut: '?', run: act(() => setState({ shortcutsOpen: true })) },
       ],
     })

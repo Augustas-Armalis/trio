@@ -16,6 +16,7 @@ import { CommandPalette, ShortcutsDialog } from '@/components/trio/palette'
 import { PhoneApp } from '@/components/trio/phone'
 import { useIsPhone } from '@/components/trio/picker'
 import { AppSidebar, Toolbar } from '@/components/trio/shell'
+import { SyncDialog } from '@/components/trio/sync'
 import { Compose, Lightbox, ProjectDialog, TaskSheet, WhoAreYou } from '@/components/trio/surfaces'
 
 const typing = (t: EventTarget | null) => {
@@ -142,6 +143,7 @@ export function App() {
         <CommandPalette />
         <ShortcutsDialog />
         <BulkBar />
+        <SyncDialog />
         <WhoAreYou />
         <ToastProvider position="bottom-center" />
       </TooltipProvider>

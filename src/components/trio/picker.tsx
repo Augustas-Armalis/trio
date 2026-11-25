@@ -75,7 +75,7 @@ export function PickItem({ active, onClick, children, hint, danger, chevron }: {
 }
 
 const iconBtn = { variant: 'ghost', size: 'icon-sm' } as const
-const pillBtn = { variant: 'secondary', size: 'lg', className: 'shrink-0 rounded-full' } as const
+const pillBtn = { variant: 'secondary', size: 'default', className: 'shrink-0 rounded-full' } as const
 const fieldBtn = { variant: 'ghost', size: 'sm', className: 'justify-start' } as const
 
 /* ---------------------------------------------------------------- status */
@@ -151,7 +151,7 @@ export function AssigneePicker({ who, onPick, variant = 'field', pill }: { who: 
       title="Assign to"
       align={variant === 'icon' ? 'end' : 'start'}
       button={pill ? { ...pillBtn, className: 'shrink-0 rounded-full pl-1', 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` } : variant === 'icon' ? { variant: 'ghost', size: 'icon-sm', 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` } : { ...fieldBtn, 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` }}
-      label={variant === 'icon' ? <PersonAvatar who={who} size={24} /> : <><PersonAvatar who={who} size={pill ? 26 : 20} />{who ? PERSON[who].name : 'Unassigned'}{pill ? null : <ChevronDownIcon className="opacity-40" />}</>}
+      label={variant === 'icon' ? <PersonAvatar who={who} size={24} /> : <><PersonAvatar who={who} size={pill ? 22 : 20} />{who ? PERSON[who].name : 'Unassigned'}{pill ? null : <ChevronDownIcon className="opacity-40" />}</>}
     >
       {(close) => <PersonList who={who} onPick={(p) => { onPick(p); close() }} />}
     </Picker>
@@ -177,7 +177,7 @@ export function DueEditor({ due, onPick }: { due: string | null; onPick: (d: str
       </div>
       <div className="mt-1.5 flex justify-center border-t pt-1.5">
         <Calendar
-          mode="single" weekStartsOn={1} selected={due ? parseYmd(due) : undefined} defaultMonth={due ? parseYmd(due) : parseYmd(now)}
+          mode="single" weekStartsOn={1} disabled={{ before: parseYmd(now) }} selected={due ? parseYmd(due) : undefined} defaultMonth={due ? parseYmd(due) : parseYmd(now)}
           onSelect={(d) => d && onPick(ymd(d))}
         />
       </div>

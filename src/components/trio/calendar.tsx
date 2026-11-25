@@ -1,7 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import type { Task } from '@/types'
-import { openCompose, openTask, updateTask, useStore } from '@/data/store'
+import { openCompose, openTask, toast, updateTask, useStore } from '@/data/store'
 import { MONTHS, monthGrid, parseYmd } from '@/lib/dates'
 import { useDrag } from '@/lib/drag'
 import { cn } from '@/lib/utils'
@@ -55,7 +55,10 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
   const { bind, dragId, ghost } = useDrag<string>({
     hit: (x, y) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>('[data-day]')?.dataset.day ?? null,
     onTarget: setOver,
-    onDrop: (id, day) => updateTask(id, { due: day }),
+    onDrop: (id, day) => {
+      if (day < now) return toast("Can't schedule in the past")
+      updateTask(id, { due: day })
+    },
     renderGhost: (id) => {
       const t = tasks.find((x) => x.id === id)
       return t ? <div style={tint(t)} className="flex h-5.5 w-50 items-center gap-1.5 rounded-md bg-[color-mix(in_oklab,var(--pc)_22%,#222226)] px-1.75 text-xs shadow-xl"><span className="size-1.5 rounded-full bg-[var(--pc)]" /><span className="truncate">{titleOf(t)}</span></div> : null
@@ -98,13 +101,13 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
               key={day} data-day={day}
               className={cn('group/day relative flex min-w-0 flex-col gap-1 bg-background p-1.5 max-sm:items-center max-sm:px-0.5 max-sm:py-1 [@media(hover:hover)]:hover:bg-accent/40', outside && 'bg-[#121214]', over === day && 'bg-accent', selected === day && 'max-sm:bg-accent')}
               onClick={() => setSelected(day === selected ? null : day)}
-              onDoubleClick={() => openCompose({ due: day })}
+              onDoubleClick={() => { if (day >= now) openCompose({ due: day }) }}
             >
               <div className="flex h-5.5 items-center justify-between max-sm:justify-center">
-                <span className={cn('inline-grid h-5.5 min-w-5.5 place-items-center rounded-full px-1 tabular-nums text-xs', outside ? 'text-muted-foreground/50' : 'text-foreground/80', isToday && 'bg-foreground font-semibold text-background')}>
+                <span className={cn('inline-grid h-5.5 min-w-5.5 place-items-center rounded-full px-1 tabular-nums text-xs', outside ? 'text-muted-foreground/50' : day < now ? 'text-foreground/45' : 'text-foreground/80', isToday && 'bg-foreground font-semibold text-background')}>
                   {dt.getDate() === 1 ? `${MONTHS[dt.getMonth()].slice(0, 3)} 1` : dt.getDate()}
                 </span>
-                <Button variant="ghost" size="icon-xs" className="opacity-0 transition-opacity group-hover/day:opacity-100 focus-visible:opacity-100 max-sm:hidden" aria-label={`New task on ${day}`} onClick={(e) => { e.stopPropagation(); openCompose({ due: day }) }}><PlusIcon /></Button>
+                <Button variant="ghost" size="icon-xs" className={cn('opacity-0 transition-opacity group-hover/day:opacity-100 focus-visible:opacity-100 max-sm:hidden', day < now && 'hidden')} aria-label={`New task on ${day}`} onClick={(e) => { e.stopPropagation(); openCompose({ due: day }) }}><PlusIcon /></Button>
               </div>
               <div className="flex min-w-0 flex-col gap-0.75 max-sm:hidden">
                 {list.slice(0, MAX_CHIPS).map((t) => <Chip key={t.id} task={t} bind={bind} dragging={dragId === t.id} />)}
@@ -132,7 +135,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
         <div className="mt-4 flex flex-col gap-0.5">
           <div className="flex items-center justify-between px-1 pb-2">
             <strong className="text-base">{parseYmd(selected).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</strong>
-            <Button variant="secondary" onClick={() => openCompose({ due: selected })}><PlusIcon />New task</Button>
+            <Button variant="secondary" onClick={() => openCompose({ due: selected >= now ? selected : now })}><PlusIcon />New task</Button>
           </div>
           {agenda.length ? agenda.map((t) => (
             <button key={t.id} className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 text-left active:bg-accent" onClick={() => openTask(t.id)}>

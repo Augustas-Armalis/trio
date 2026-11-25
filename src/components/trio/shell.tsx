@@ -15,6 +15,7 @@ import { RadioGroupPrimitive, RadioPrimitive } from '@/components/ui/radio-group
 import { SegmentedControl, SegmentedControlItem } from '@/components/ui/segmented-control'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import { PickItem, useIsPhone } from './picker'
+import { openSync } from './sync'
 import { Mark, PersonAvatar, PriorityIcon, ProjectDot } from './primitives'
 import { MoreHorizontalIcon } from 'lucide-react'
 
@@ -26,6 +27,7 @@ export function AppSidebar() {
   const tasks = useStore((s) => s.tasks)
   const me = useStore((s) => s.me)
   const mode = useStore((s) => s.mode)
+  const via = useStore((s) => s.via)
   const conn = useStore((s) => s.conn)
   const { setOpenMobile } = useSidebar()
   const go = (sc: Parameters<typeof setScope>[0]) => { setScope(sc); setOpenMobile(false) }
@@ -44,7 +46,7 @@ export function AppSidebar() {
 
   const sync = mode === 'local'
     ? { dot: 'border border-muted-foreground bg-transparent', text: 'This device only' }
-    : conn === 'live' ? { dot: 'bg-foreground/70', text: 'Live' }
+    : conn === 'live' ? { dot: 'bg-foreground/70', text: via === 'github' ? 'Synced via GitHub' : 'Live' }
     : conn === 'connecting' ? { dot: 'bg-muted-foreground/50', text: 'Connecting' }
     : { dot: 'bg-destructive', text: conn === 'slow' ? 'Can’t reach the server' : 'Disconnected' }
 
@@ -101,9 +103,9 @@ export function AppSidebar() {
             {PEOPLE.map((p) => <MenuItem key={p.id} onClick={() => setMe(p.id)}><PersonAvatar who={p.id} size={20} />{p.name}{p.id === me ? <span className="ml-auto text-xs opacity-60">You</span> : null}</MenuItem>)}
           </MenuPopup>
         </Menu>
-        <div className="flex items-center gap-2 px-2.5 pb-1 text-xs text-sidebar-foreground/80" title={mode === 'local' ? 'Changes are saved in this browser only. Open Trio from the shared link to sync.' : undefined}>
-          <i className={cn('size-1.5 rounded-full', sync.dot)} />{sync.text}
-        </div>
+        <button type="button" onClick={openSync} className="flex items-center gap-2 rounded-md px-2.5 pb-1 text-left text-xs text-sidebar-foreground/80 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:text-sidebar-foreground" title={mode === 'local' ? 'Saved in this browser only. Click to sync across devices.' : 'Sync settings'}>
+          <i className={cn('size-1.5 rounded-full', sync.dot)} />{sync.text}{mode === 'local' ? <span className="underline underline-offset-2">Sync…</span> : null}
+        </button>
       </SidebarFooter>
     </Sidebar>
   )

@@ -43,6 +43,10 @@ Phone mode is its own design (it switches at 640px), built bottom-first.
 - **Keyboard:** the app is sized to the visual viewport, so the dock and the create bar lift above the keyboard on iOS and Android.
 - Baseline: 16px inputs (no zoom), safe-area insets, no tap flash, hover only where hover exists.
 
+## Sync on GitHub Pages (no server)
+
+The Pages copy keeps data in your browser until you connect it: **Sidebar → Sync…** (or the title drawer on a phone). Keep the board in a **private** GitHub repo and paste a fine-grained token (Contents: Read and write, only that repo). **Copy join link** puts your phone and teammates on the same board; the token rides in the link's `#fragment` (never sent to a server) and is stored only in each browser's localStorage. Nothing secret is in this repo. Changes appear on the other devices within a few seconds; the newest write per task wins, deletes are tombstones.
+
 ## Where it syncs
 
 | Build | Sync |

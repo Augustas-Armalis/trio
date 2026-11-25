@@ -8,13 +8,15 @@ import { toastManager } from '@/components/ui/toast'
 import { splitBody, uid } from '../lib/util'
 
 export type ToastAction = { label: string; run: () => void }
-export type ComposeInit = { status?: Status; due?: string | null; project?: string; assignee?: Person | null; priority?: Priority }
+export type ComposeInit = { body?: string; status?: Status; due?: string | null; project?: string; assignee?: Person | null; priority?: Priority }
 export type PalettePage = 'root' | 'status' | 'priority' | 'assignee' | 'due' | 'project'
 export type ProjectDialog = { mode: 'new' } | { mode: 'edit'; id: string }
 
 export interface State {
   ready: boolean
   mode: 'cloud' | 'local'
+  via: 'github' | null
+  syncOpen: boolean
   conn: Conn
   tasks: Task[]
   projects: Project[]
@@ -45,7 +47,7 @@ const readPrefs = (): Partial<State> => {
 }
 
 let state: State = {
-  ready: false, mode: 'local', conn: 'connecting', tasks: [], projects: [], me: null, today: todayStr(),
+  ready: false, mode: 'local', via: null, syncOpen: false, conn: 'connecting', tasks: [], projects: [], me: null, today: todayStr(),
   scope: { kind: 'all' }, view: 'list', group: 'status', sort: 'manual', fPeople: [], fPriority: [], q: '',
   openTaskId: null, compose: null, projectDialog: null, lightbox: null, actionsFor: null, selected: [], palette: null, shortcutsOpen: false,
   ...readPrefs(),
@@ -115,7 +117,7 @@ function normProject(d: RawDoc): Project {
 export async function init(b: Backend) {
   backend = b
   const me = await b.loadMe()
-  setState({ mode: b.kind, me })
+  setState({ mode: b.kind, via: b.via ?? null, me })
   let tasksSeen = false
   let conn: Conn = 'connecting'
   const onConn = (c: Conn) => { if (c !== conn) { conn = c; setState({ conn: c }) } }
