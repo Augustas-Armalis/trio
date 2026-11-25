@@ -14,8 +14,11 @@ export const STATUSES: { id: Status; label: string; hint: string }[] = [
   { id: 'todo', label: 'To do', hint: 'Ready to start' },
   { id: 'in_progress', label: 'In progress', hint: 'Being worked on' },
   { id: 'done', label: 'Done', hint: 'Finished' },
+  { id: 'cancelled', label: 'Cancelled', hint: 'Declined or not doing it' },
   { id: 'escalated', label: 'Escalated', hint: 'Needs attention now' },
 ]
+/** Done and cancelled tasks are both finished business: they leave the open counts and look quiet. */
+export const isClosed = (t: { status: Status }) => t.status === 'done' || t.status === 'cancelled'
 export const STATUS = Object.fromEntries(STATUSES.map((s) => [s.id, s])) as Record<Status, (typeof STATUSES)[number]>
 
 export const PRIORITIES: { id: Priority; label: string; weight: number }[] = [

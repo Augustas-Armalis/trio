@@ -33,6 +33,12 @@ export function StatusIcon({ status, progress = 0, size = 16, className }: { sta
           <path d="M8 4.9v3.5M8 10.6h.01" stroke="var(--red)" strokeWidth="1.6" strokeLinecap="round" />
         </>
       )}
+      {status === 'cancelled' && (
+        <>
+          <circle cx={C} cy={C} r={R} stroke="currentColor" strokeWidth="1.5" opacity="0.7" />
+          <path d="M5.9 5.9l4.2 4.2M10.1 5.9l-4.2 4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
+        </>
+      )}
       {status === 'done' && (
         <>
           <circle cx={C} cy={C} r={R + 0.75} fill="var(--foreground)" />

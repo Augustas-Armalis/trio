@@ -7,6 +7,7 @@ import { useDrag } from '@/lib/drag'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
+import { isClosed } from '@/data/people'
 import { AvatarStack, PriorityIcon, StatusIcon } from './primitives'
 import { titleOf } from './parts'
 import { useIsPhone } from './picker'
@@ -16,7 +17,7 @@ const MAX_CHIPS = 3
 const tint = (t: Task) => ({ ['--pc' as string]: t.assignee ? `var(--p-${t.assignee})` : 'var(--muted-foreground)' })
 
 function Chip({ task, bind, dragging }: { task: Task; bind: (id: string) => object; dragging: boolean }) {
-  const done = task.status === 'done'
+  const done = isClosed(task)
   return (
     <div
       role="button" tabIndex={0} data-chip={task.id} style={tint(task)}
@@ -47,7 +48,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
     for (const [, l] of m) l.sort((a, b) => Number(a.status === 'done') - Number(b.status === 'done') || a.rank - b.rank)
     return m
   }, [tasks])
-  const undated = useMemo(() => tasks.filter((t) => !t.due && t.status !== 'done').length, [tasks])
+  const undated = useMemo(() => tasks.filter((t) => !t.due && !isClosed(t)).length, [tasks])
   const step = (n: number) => setCur((c) => { const d = new Date(c.y, c.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() } })
   const goToday = () => { const d = parseYmd(now); setCur({ y: d.getFullYear(), m: d.getMonth() }); setSelected(now) }
   const swipe = useRef<{ x: number; y: number } | null>(null)
@@ -140,7 +141,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
           {agenda.length ? agenda.map((t) => (
             <button key={t.id} className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 text-left active:bg-accent" onClick={() => openTask(t.id)}>
               <StatusIcon status={t.status} progress={t.progress} size={20} />
-              <span className={cn('min-w-0 flex-1 truncate text-[15px]', t.status === 'done' && 'text-muted-foreground')}>{titleOf(t)}</span>
+              <span className={cn('min-w-0 flex-1 truncate text-[15px]', isClosed(t) && 'text-muted-foreground')}>{titleOf(t)}</span>
               <PriorityIcon priority={t.priority} /><AvatarStack who={t.assignees} size={24} />
             </button>
           )) : <p className="px-1 text-muted-foreground">Nothing due.</p>}

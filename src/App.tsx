@@ -1,5 +1,6 @@
 import { MotionConfig, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
+import { isClosed } from '@/data/people'
 import {
   clearSelection, closePalette, deleteTask, deleteTasks, getState, openCompose, openPalette, openTask, selectMany, setState, targetTaskId,
   toggleDone, useStore, useTaskOrder, useVisibleTasks,
@@ -157,6 +158,9 @@ export function App() {
   const [sbw, setSbw] = useState(() => clampW(Number(safeGet('trio:sbw')) || SB_DEFAULT))
   useEffect(() => { try { localStorage.setItem('trio:sbw', String(sbw)) } catch { /* ignore */ } }, [sbw])
   useShortcuts()
+  // The tab title carries how many open tasks are yours, like a notification badge.
+  const mineOpen = useStore((s) => (s.me ? s.tasks.filter((t) => t.assignees.includes(s.me!) && !isClosed(t)).length : 0))
+  useEffect(() => { document.title = mineOpen ? `(${mineOpen}) Trio` : 'Trio: a shared task board for small teams' }, [mineOpen])
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider>

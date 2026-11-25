@@ -2,7 +2,7 @@ import { animate, AnimatePresence, LayoutGroup, motion, useMotionValue, useTrans
 import { CalendarIcon, ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Priority, Status, Task } from '@/types'
-import { PEOPLE, PERSON, PRIORITIES, STATUS } from '@/data/people'
+import { PEOPLE, PERSON, PRIORITIES, STATUS, isClosed } from '@/data/people'
 import { openActions, openCompose, openTask, setState, sortTasks, toggleDone, toggleSelect, useStore, type ComposeInit } from '@/data/store'
 import { addDays, diffDays } from '@/lib/dates'
 import { cn } from '@/lib/utils'
@@ -17,7 +17,7 @@ import { PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives
 import { updateTask } from '@/data/store'
 import { GENERAL_ID } from '@/data/people'
 
-const LIST_STATUS_ORDER: Status[] = ['escalated', 'in_progress', 'todo', 'backlog', 'done']
+const LIST_STATUS_ORDER: Status[] = ['escalated', 'in_progress', 'todo', 'backlog', 'done', 'cancelled']
 const EASE = [0.16, 1, 0.3, 1] as const
 
 type Group = { key: string; label: string; icon: ReactNode; tasks: Task[]; compose: ComposeInit }
@@ -51,7 +51,7 @@ export function TaskRow({ task, showProject, fancy, index = 0, intro = false }: 
   const anySelected = useStore((s) => s.selected.length > 0)
   const touch = useIsTouch()
   const phone = useIsPhone()
-  const done = task.status === 'done'
+  const done = isClosed(task)
   const x = useMotionValue(0)
   const reveal = useTransform(x, [0, 88], [0, 1])
   const iconScale = useTransform(x, [0, 88], [0.6, 1])
@@ -139,7 +139,7 @@ export function TaskRow({ task, showProject, fancy, index = 0, intro = false }: 
 
 function PhoneMeta({ task, showProject }: { task: Task; showProject: boolean }) {
   const projects = useStore((s) => s.projects)
-  const done = task.status === 'done'
+  const done = isClosed(task)
   const pname = task.project === GENERAL_ID ? 'General' : projects.find((p) => p.id === task.project)?.name ?? 'General'
   return (
     <div className="mt-0.5 flex items-center gap-2 text-[13px] text-muted-foreground sm:hidden">
@@ -160,7 +160,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
   const scope = useStore((s) => s.scope)
   const now = useStore((s) => s.today)
   const phone = useIsPhone()
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(['done']))
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set(['done', 'cancelled']))
   const [intro, setIntro] = useState(true)
   useEffect(() => { const t = setTimeout(() => setIntro(false), 900); return () => clearTimeout(t) }, [])
   const fancy = tasks.length < 150
@@ -198,7 +198,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
     type Bk = 'over' | 'today' | 'tomorrow' | 'week' | 'later' | 'none'
     const bucket = (t: Task): Bk => {
       if (!t.due) return 'none'
-      if (t.status === 'done') return 'later'
+      if (isClosed(t)) return 'later'
       const n = diffDays(t.due, now)
       return n < 0 ? 'over' : n === 0 ? 'today' : n === 1 ? 'tomorrow' : n < 7 ? 'week' : 'later'
     }
@@ -213,7 +213,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
 
   return (
     <LayoutGroup id="list">
-    <div className="h-full overflow-y-auto overscroll-contain px-1.5 pb-6 sm:px-3 sm:pb-24">
+    <motion.div layoutScroll className="h-full overflow-y-auto overscroll-contain px-1.5 pb-6 sm:px-3 sm:pb-24">
       {groups.map((g) => {
         const isCollapsed = collapsed.has(g.key)
         return (
@@ -246,7 +246,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
         )
       })}
       {phone ? null : null}
-    </div>
+    </motion.div>
     </LayoutGroup>
   )
 }

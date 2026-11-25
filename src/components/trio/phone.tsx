@@ -1,7 +1,7 @@
 import { ChevronDownIcon, PlusIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { GENERAL_ID } from '@/data/people'
+import { GENERAL_ID, isClosed } from '@/data/people'
 import { openCompose, setMe, setScope, setState, useStore } from '@/data/store'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
@@ -81,7 +81,7 @@ function ScopeDrawer({ title }: { title: string }) {
     const m = new Map<string, number>()
     let mine = 0, all = 0
     for (const t of tasks) {
-      if (t.status === 'done') continue
+      if (isClosed(t)) continue
       all++
       m.set(t.project, (m.get(t.project) ?? 0) + 1)
       if (me && t.assignees.includes(me)) mine++

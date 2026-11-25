@@ -1,9 +1,9 @@
 import { RefreshCwIcon, CalendarDaysIcon, CheckIcon, ClipboardCopyIcon, CopyIcon, Columns3Icon, FolderIcon, InboxIcon, KeyboardIcon, ListIcon, PlusIcon, TargetIcon, Trash2Icon, UserIcon } from 'lucide-react'
 import { Fragment, type ReactNode, useMemo } from 'react'
 import type { Person } from '@/types'
-import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
+import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES, isClosed } from '@/data/people'
 import {
-  closePalette, copyTaskLink, deleteTask, duplicateTask, openCompose, openPalette, openTask, setMe, setScope, setState, setStatus,
+  cancelTask, closePalette, copyTaskLink, escalateTask, deleteTask, duplicateTask, openCompose, openPalette, openTask, setMe, setScope, setState, setStatus,
   titleOf, toast, toggleDone, updateTask, useStore,
 } from '@/data/store'
 import { PRESETS } from '@/lib/presets'
@@ -51,11 +51,13 @@ export function CommandPalette() {
 
     const out: Group[] = []
     if (target) {
-      const isDone = target.status === 'done'
+      const isDone = isClosed(target)
       out.push({
         value: `${target.key}  ${titleOf(target)}`,
         items: [
           { value: 'do-done', label: isDone ? 'Reopen' : 'Mark done', icon: <CheckIcon className={ic} />, shortcut: 'X', run: act(() => toggleDone(target.id)) },
+          { value: 'do-escalate', label: target.status === 'escalated' ? 'Remove escalation' : 'Escalate', icon: <StatusIcon status="escalated" size={16} />, run: act(() => escalateTask(target.id)) },
+          { value: 'do-cancel', label: target.status === 'cancelled' ? 'Reopen' : 'Cancel task', icon: <StatusIcon status="cancelled" size={16} />, run: act(() => cancelTask(target.id)) },
           { value: 'do-status', label: 'Set status…', icon: <StatusIcon status={target.status} progress={target.progress} size={16} />, shortcut: 'S', keep: true, run: () => openPalette('status', target.id) },
           { value: 'do-priority', label: 'Set priority…', icon: <PriorityIcon priority={target.priority} size={16} />, shortcut: 'P', keep: true, run: () => openPalette('priority', target.id) },
           { value: 'do-assign', label: 'Assign to…', icon: <AvatarStack who={target.assignees} size={18} />, shortcut: 'A', keep: true, run: () => openPalette('assignee', target.id) },

@@ -2,7 +2,7 @@ import { PlusIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Status, Task } from '@/types'
-import { STATUSES } from '@/data/people'
+import { STATUSES, isClosed } from '@/data/people'
 import { moveTask, openActions, openCompose, openTask, rankBetween, updateTask, useStore } from '@/data/store'
 import { useDrag } from '@/lib/drag'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,9 @@ import { EmptyState } from './list'
 const EASE = [0.16, 1, 0.3, 1] as const
 type Drop = { status: Status; index: number }
 
+/** Columns for outcomes that are usually empty stay out of the way until they hold something (or a card is being dragged). */
+const QUIET = new Set(['escalated', 'cancelled'])
+
 function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
   const phone = useIsPhone()
   const img = task.images[0]
@@ -26,7 +29,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
         <div className="relative z-10"><StatusBtn task={task} /></div>
         <button
           type="button" data-open-task onClick={() => openTask(task.id)} title={titleOf(task)}
-          className={cn('line-clamp-3 cursor-pointer pt-1.5 text-left text-[15px] break-words outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:shadow-[inset_0_0_0_2px_var(--ring)] sm:pt-1 sm:text-sm', task.status === 'done' && 'text-muted-foreground')}
+          className={cn('line-clamp-3 cursor-pointer pt-1.5 text-left text-[15px] break-words outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:shadow-[inset_0_0_0_2px_var(--ring)] sm:pt-1 sm:text-sm', isClosed(task) && 'text-muted-foreground')}
         >{titleOf(task)}</button>
         <div className="relative z-10"><TaskMenu task={task} className="-mt-0.5 -mr-1" /></div>
       </div>
@@ -39,9 +42,9 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
         </div>
       ) : null}
       {phone ? (
-        <div className={cn('relative z-10 ml-9 max-sm:ml-12 flex min-w-0 items-center gap-2.5 text-xs text-muted-foreground', task.status === 'done' && 'opacity-55')}>
+        <div className={cn('relative z-10 ml-9 max-sm:ml-12 flex min-w-0 items-center gap-2.5 text-xs text-muted-foreground', isClosed(task) && 'opacity-55')}>
           <PriorityIcon priority={task.priority} size={15} />
-          {task.due ? <DueText due={task.due} done={task.status === 'done'} /> : null}
+          {task.due ? <DueText due={task.due} done={isClosed(task)} /> : null}
           <Indicators task={task} />
           {showProject ? <ProjectChip project={task.project} className="min-w-0 shrink" /> : null}
           <span className="grow" />
@@ -49,14 +52,14 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
         </div>
       ) : (
         <>
-        <div className={cn('relative z-10 ml-7 flex min-w-0 items-center gap-0.5', task.status === 'done' && 'opacity-55')}>
+        <div className={cn('relative z-10 ml-7 flex min-w-0 items-center gap-0.5', isClosed(task) && 'opacity-55')}>
           <PriorityPicker variant="icon" priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} />
-          <DuePicker variant="icon" due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} />
+          <DuePicker variant="icon" due={task.due} done={isClosed(task)} onPick={(d) => updateTask(task.id, { due: d })} />
           <Indicators task={task} />
           <span className="grow" />
           <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
         </div>
-        {showProject ? <div className={cn('relative z-10 ml-7 flex', task.status === 'done' && 'opacity-55')}><ProjectChip project={task.project} className="max-w-full" /></div> : null}
+        {showProject ? <div className={cn('relative z-10 ml-7 flex', isClosed(task) && 'opacity-55')}><ProjectChip project={task.project} className="max-w-full" /></div> : null}
         </>
       )}
     </>
@@ -106,16 +109,16 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
   })
 
   return (
-    <div className="h-full overflow-auto overscroll-contain px-4 pb-4">
+    <motion.div layoutScroll className="h-full overflow-auto overscroll-contain px-4 pb-4">
     <div className="flex min-h-full items-stretch gap-2.5 pt-1.5">
-      {STATUSES.map((s) => {
+      {STATUSES.filter((s) => !QUIET.has(s.id) || (cols.get(s.id)?.length ?? 0) > 0 || dragId).map((s) => {
         const list = cols.get(s.id)!
         const over = drop?.status === s.id
         const order = new Map<string, number>()
         let k = 0
         for (const t of list) order.set(t.id, t.id === dragId ? -1 : k++)
         return (
-          <section key={s.id} aria-label={s.label} data-col={s.id} className={cn('flex min-w-55 max-w-90 flex-1 basis-55 flex-col rounded-2xl bg-muted p-1.5 transition-colors', over && 'bg-foreground/9')}>
+          <section key={s.id} aria-label={s.label} data-col={s.id} className={cn('flex w-[calc((100%-30px)/4)] min-w-60 shrink-0 flex-col rounded-2xl bg-muted p-1.5 transition-colors', over && 'bg-foreground/9')}>
             <header className="sticky top-0 z-20 -mx-0.5 flex h-9 shrink-0 items-center gap-2 rounded-xl bg-[#1b1b1b] pr-1.5 pl-3">
               <StatusIcon status={s.id} progress={50} size={18} />
               <span className="font-semibold">{s.label}</span>
@@ -146,17 +149,18 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
       })}
       {ghost}
     </div>
-    </div>
+    </motion.div>
   )
 }
 
 /* ---------------------------------------------------------------- phone: one column per screen, swipe between */
 
 function PhoneBoard({ cols }: { cols: Map<Status, Task[]> }) {
+  const shown = STATUSES.filter((s) => !QUIET.has(s.id) || (cols.get(s.id)?.length ?? 0) > 0)
   const scope = useStore((s) => s.scope)
   const showProject = scope.kind !== 'project'
   const scroller = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState(() => Math.max(0, STATUSES.findIndex((s) => (cols.get(s.id)?.length ?? 0) > 0 && s.id === 'in_progress')))
+  const [active, setActive] = useState(() => Math.max(0, shown.findIndex((s) => (cols.get(s.id)?.length ?? 0) > 0 && s.id === 'in_progress')))
   const tabs = useRef<HTMLDivElement>(null)
   const raf = useRef(0)
 
@@ -179,7 +183,7 @@ function PhoneBoard({ cols }: { cols: Map<Status, Task[]> }) {
   return (
     <div className="flex h-full flex-col">
       <div ref={scroller} onScroll={onScroll} className="no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain">
-        {STATUSES.map((s) => {
+        {shown.map((s) => {
           const list = cols.get(s.id)!
           return (
             <section key={s.id} aria-label={s.label} className="h-full min-w-full snap-start snap-always overflow-y-auto overscroll-contain px-3 pb-6">
@@ -202,7 +206,7 @@ function PhoneBoard({ cols }: { cols: Map<Status, Task[]> }) {
         })}
       </div>
       <div ref={tabs} className="no-scrollbar flex shrink-0 gap-1.5 overflow-x-auto px-3 py-2" role="tablist" aria-label="Status">
-        {STATUSES.map((s, i) => (
+        {shown.map((s, i) => (
           <button
             key={s.id} role="tab" aria-selected={active === i} onClick={() => go(i)}
             className={cn('flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors active:scale-[0.97]', active === i ? 'bg-foreground/12 text-foreground' : 'text-muted-foreground')}

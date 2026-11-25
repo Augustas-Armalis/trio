@@ -77,7 +77,7 @@ let backend: Backend
 const stops: (() => void)[] = []
 
 const num = (v: unknown, d: number) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
-const STATUS_SET = new Set<Status>(['backlog', 'todo', 'in_progress', 'done', 'escalated'])
+const STATUS_SET = new Set<Status>(['backlog', 'todo', 'in_progress', 'done', 'cancelled', 'escalated'])
 const PRIO_SET = new Set<Priority>(['low', 'medium', 'high', 'urgent'])
 const PEOPLE_SET = new Set<string>(['augustas', 'barbora', 'rokas'])
 
@@ -213,6 +213,8 @@ export function statusPatch(t: Task, status: Status): Partial<Task> {
   const patch: Partial<Task> = { status }
   if (status === 'done') {
     Object.assign(patch, { progress: 100, doneAt: Date.now(), prev: t.status })
+  } else if (status === 'cancelled') {
+    Object.assign(patch, { doneAt: null, prev: t.status === 'done' ? t.prev : t.status })
   } else {
     patch.doneAt = null
     patch.prev = null
@@ -256,12 +258,28 @@ export function setProgress(id: string, p: number) {
 export function toggleDone(id: string, opts: { quiet?: boolean } = {}) {
   const cur = getState().tasks.find((t) => t.id === id)
   if (!cur) return
-  if (cur.status === 'done') {
-    setStatus(id, cur.prev && cur.prev !== 'done' ? cur.prev : 'todo')
+  if (cur.status === 'done' || cur.status === 'cancelled') {
+    setStatus(id, cur.prev && cur.prev !== 'done' && cur.prev !== 'cancelled' ? cur.prev : 'todo')
     return
   }
   setStatus(id, 'done')
   if (!opts.quiet) toast('Marked done', { label: 'Undo', run: () => setStatus(id, cur.status) })
+}
+
+/** Keep the task but mark it as declined, so you can look back at what you said no to. */
+export function cancelTask(id: string) {
+  const cur = getState().tasks.find((t) => t.id === id)
+  if (!cur) return
+  if (cur.status === 'cancelled') return toggleDone(id)
+  setStatus(id, 'cancelled')
+  toast('Cancelled', { label: 'Undo', run: () => setStatus(id, cur.status) })
+}
+export function escalateTask(id: string) {
+  const cur = getState().tasks.find((t) => t.id === id)
+  if (!cur) return
+  if (cur.status === 'escalated') return setStatus(id, 'todo')
+  setStatus(id, 'escalated')
+  toast('Escalated', { label: 'Undo', run: () => setStatus(id, cur.status) })
 }
 
 export type NewTask = {
@@ -514,7 +532,7 @@ export function useVisibleTasks(): Task[] {
   }, [tasks, scope, fPeople, fPriority, q, me])
 }
 
-const ORDER: Status[] = ['escalated', 'in_progress', 'todo', 'backlog', 'done']
+const ORDER: Status[] = ['escalated', 'in_progress', 'todo', 'backlog', 'done', 'cancelled']
 /** Visible tasks in the order the list shows them: status groups first, then the chosen sort. */
 export function useTaskOrder(): string[] {
   const tasks = useVisibleTasks()

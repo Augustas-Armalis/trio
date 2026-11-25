@@ -1,9 +1,9 @@
-import { Link2Icon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { BanIcon, Link2Icon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person, Priority, Status, Task } from '@/types'
-import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES } from '@/data/people'
-import { closeCompose, closeTask, copyTaskLink, copyTasksTo, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
+import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, isClosed } from '@/data/people'
+import { cancelTask, closeCompose, closeTask, copyTaskLink, copyTasksTo, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
 import { dueLabel, timeAgo } from '@/lib/dates'
 import { PRESETS } from '@/lib/presets'
 import { cn, } from '@/lib/utils'
@@ -219,6 +219,7 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
           <>
             <span className="mx-1 h-4 w-px bg-border" />
             <Button variant="ghost" size="sm" onClick={() => toggleDone(task.id)} title={isDone ? 'Reopen (X)' : 'Mark done (X)'}><CheckIcon />{isDone ? 'Reopen' : 'Done'}</Button>
+            <Button variant="ghost" size="icon-sm" aria-label={task.status === 'cancelled' ? 'Reopen task' : 'Cancel task'} title={task.status === 'cancelled' ? 'Reopen' : 'Cancel (keeps it, marked as declined)'} onClick={() => cancelTask(task.id)}><BanIcon /></Button>
             <Button variant="ghost" size="icon-sm" aria-label="Delete task" title="Delete (⌫)" onClick={() => deleteTask(task.id)}><Trash2Icon /></Button>
             <TaskMenu task={task} className="opacity-100" />
             <Button variant="ghost" size="icon-sm" aria-label="Close" title="Close (Esc)" onClick={closeTask}><XIcon /></Button>
@@ -236,7 +237,7 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
           <Prop label="Progress"><Progress value={task.progress} onChange={(p) => setProgress(task.id, p)} /></Prop>
           <Prop label="Priority"><PriorityPicker priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} /></Prop>
           <Prop label="For"><AssigneePicker who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} /></Prop>
-          <Prop label="Due"><DuePicker due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} /></Prop>
+          <Prop label="Due"><DuePicker due={task.due} done={isClosed(task)} onPick={(d) => updateTask(task.id, { due: d })} /></Prop>
           <Prop label="Project"><ProjectPicker project={task.project} onPick={(p) => updateTask(task.id, { project: p })} /></Prop>
         </dl>
       </div>
@@ -307,9 +308,9 @@ function ProjectBody() {
   const [confirm, setConfirm] = useState(false)
   const movable = useMemo(() => {
     const n = q.trim().toLowerCase()
-    return tasks.filter((t) => t.status !== 'done' && (!n || t.body.toLowerCase().includes(n) || t.key.toLowerCase().includes(n))).slice(0, 300)
+    return tasks.filter((t) => !isClosed(t) && (!n || t.body.toLowerCase().includes(n) || t.key.toLowerCase().includes(n))).slice(0, 300)
   }, [tasks, q])
-  const allCount = useMemo(() => tasks.filter((t) => t.status !== 'done').length, [tasks])
+  const allCount = useMemo(() => tasks.filter((t) => !isClosed(t)).length, [tasks])
   const count = edit ? tasks.filter((t) => t.project === edit.id).length : 0
   const close = () => setState({ projectDialog: null })
   const submit = () => {

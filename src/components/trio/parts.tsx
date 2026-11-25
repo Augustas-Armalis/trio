@@ -1,8 +1,8 @@
-import { CalendarIcon, CheckIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Icon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
+import { AlertCircleIcon, BanIcon, CalendarIcon, CheckIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Icon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '@/types'
-import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
-import { actionsCloseBlocked, copyTaskLink, deleteTask, duplicateTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
+import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES, isClosed } from '@/data/people'
+import { actionsCloseBlocked, cancelTask, copyTaskLink, escalateTask, deleteTask, duplicateTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
 import { findLinks } from '@/lib/util'
 import { cn } from '@/lib/utils'
 import { PRESETS } from '@/lib/presets'
@@ -19,10 +19,11 @@ const stop = (e: { stopPropagation(): void }) => e.stopPropagation()
 
 /** The ring as a button: one tap marks it done, another brings it back where it was. */
 export function StatusBtn({ task }: { task: Task }) {
-  const done = task.status === 'done'
+  const done = isClosed(task)
+  const label = task.status === 'cancelled' ? 'Reopen (cancelled)' : done ? 'Mark not done' : 'Mark done'
   return (
     <Button
-      variant="ghost" size="icon-sm" aria-label={done ? 'Mark not done' : 'Mark done'} title={done ? 'Mark not done' : 'Mark done'}
+      variant="ghost" size="icon-sm" aria-label={label} title={label}
       className="active:[&_svg]:scale-85 max-sm:size-11"
       onClick={(e) => { e.stopPropagation(); navigator.vibrate?.(done ? 0 : 8); toggleDone(task.id) }}
       onPointerDown={stop}
@@ -52,7 +53,9 @@ export function TaskMenu({ task, className }: { task: Task; className?: string }
           <MoreHorizontalIcon />
         </MenuTrigger>
         <MenuPopup align="end" className="min-w-48">
-          <MenuItem onClick={() => toggleDone(task.id)}>{done ? 'Mark not done' : 'Mark done'}</MenuItem>
+          <MenuItem onClick={() => toggleDone(task.id)}>{isClosed(task) ? 'Reopen' : 'Mark done'}</MenuItem>
+          <MenuItem onClick={() => escalateTask(task.id)}><AlertCircleIcon />{task.status === 'escalated' ? 'Remove escalation' : 'Escalate'}</MenuItem>
+          <MenuItem onClick={() => cancelTask(task.id)}><BanIcon />{task.status === 'cancelled' ? 'Reopen' : 'Cancel task'}</MenuItem>
           <MenuSeparator />
           <MenuSub>
             <MenuSubTrigger>Status</MenuSubTrigger>
@@ -128,6 +131,8 @@ export function ActionsDrawer() {
                 <PickItem onClick={() => { toggleDone(shown.id); close() }}>
                   <span className="grid size-6 shrink-0 place-items-center"><StatusIcon status={shown.status === 'done' ? 'todo' : 'done'} size={20} /></span>{shown.status === 'done' ? 'Mark not done' : 'Mark done'}
                 </PickItem>
+                <PickItem onClick={() => { escalateTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><StatusIcon status="escalated" size={20} /></span>{shown.status === 'escalated' ? 'Remove escalation' : 'Escalate'}</PickItem>
+                <PickItem onClick={() => { cancelTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><StatusIcon status="cancelled" size={20} /></span>{shown.status === 'cancelled' ? 'Reopen' : 'Cancel task'}</PickItem>
                 <PickItem chevron hint={STATUS[shown.status].label} onClick={() => setView('status')}><span className="grid size-6 shrink-0 place-items-center"><StatusIcon status={shown.status} progress={shown.progress} size={20} /></span>Status</PickItem>
                 <PickItem chevron hint={PRIORITY[shown.priority].label} onClick={() => setView('priority')}><span className="grid size-6 shrink-0 place-items-center"><PriorityIcon priority={shown.priority} size={20} /></span>Priority</PickItem>
                 <PickItem chevron hint={shown.assignees.length ? shown.assignees.map((a) => PERSON[a].name).join(', ') : 'Nobody'} onClick={() => setView('assignee')}><span className="grid size-6 shrink-0 place-items-center"><AvatarStack who={shown.assignees} size={24} /></span>Assign to</PickItem>
@@ -155,14 +160,21 @@ export function TaskMeta({ task, menu = true }: { task: Task; menu?: boolean }) 
   return (
     <>
       <PriorityPicker variant="icon" priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} />
-      <DuePicker variant="icon" due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} />
+      <DuePicker variant="icon" due={task.due} done={isClosed(task)} onPick={(d) => updateTask(task.id, { due: d })} />
       <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
       {menu ? (
+        <>
+        <Button
+          variant="ghost" size="icon-sm" aria-label={task.status === 'cancelled' ? `Reopen ${task.key}` : `Cancel ${task.key}`} title={task.status === 'cancelled' ? 'Reopen' : 'Cancel (keeps it, marked as declined)'}
+          className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 max-sm:hidden"
+          onClick={(e) => { e.stopPropagation(); cancelTask(task.id) }} onPointerDown={stop}
+        ><BanIcon /></Button>
         <Button
           variant="ghost" size="icon-sm" aria-label={`Delete ${task.key}`} title="Delete (you can undo)"
           className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover/item:opacity-100 max-sm:hidden"
           onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }} onPointerDown={stop}
         ><Trash2Icon /></Button>
+        </>
       ) : null}
       {menu ? <TaskMenu task={task} className="max-sm:hidden" /> : null}
     </>

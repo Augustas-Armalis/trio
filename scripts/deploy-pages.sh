@@ -6,7 +6,9 @@ cd "$(dirname "$0")/.."
 npm run build
 ORIGIN=$(git remote get-url origin)
 TMP=$(mktemp -d)
-cp dist/index.html "$TMP/index.html"
+cp -R dist/. "$TMP/"
+rm -f "$TMP/artifact.html"
+cp dist/index.html "$TMP/404.html"
 touch "$TMP/.nojekyll"
 cd "$TMP"
 git init -q -b gh-pages
