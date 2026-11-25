@@ -66,7 +66,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
   )
 }
 
-const cardClass = 'relative flex flex-col gap-2 rounded-xl bg-card p-2 pr-2.5 text-card-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.4)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[#242424]'
+const cardClass = 'relative flex flex-col gap-2 rounded-xl bg-card p-2.5 text-card-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.4)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[#242424]'
 
 export function BoardView({ tasks, filtered }: { tasks: Task[]; filtered: boolean }) {
   const phone = useIsPhone()

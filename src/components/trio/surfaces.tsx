@@ -175,7 +175,7 @@ export function TaskSheet() {
   }
   return (
     <Sheet open={!!id} onOpenChange={onOpenChange}>
-      <SheetPopup side="right" variant="inset" className="outline-none focus-visible:outline-none sm:max-w-lg" showCloseButton={false} aria-label="Task details">
+      <SheetPopup side="right" variant="inset" className="outline-none focus-visible:outline-none sm:max-w-[34rem]" showCloseButton={false} aria-label="Task details">
         {shown ? <DetailBody key={shown.id} task={shown} /> : null}
       </SheetPopup>
     </Sheet>
@@ -203,22 +203,22 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
     <motion.div className="flex min-h-0 flex-1 flex-col" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>
       <Title className="sr-only">{titleOf(task)}</Title>
       <div className="flex shrink-0 items-center gap-1 px-4 pt-3 pb-1 sm:px-5">
-        <span className="text-sm text-muted-foreground">{projectName(projects, task.project)}</span>
-        <span className="text-muted-foreground/50">›</span>
+        <span className="max-w-28 shrink truncate text-sm text-muted-foreground">{projectName(projects, task.project)}</span>
+        <span className="shrink-0 text-muted-foreground/50">›</span>
         <button
           type="button" title="Copy key" aria-label={`Copy ${task.key}`}
           onClick={() => { navigator.clipboard?.writeText(task.key).then(() => toast(`Copied ${task.key}`), () => undefined) }}
-          className="inline-flex h-8 items-center rounded-md px-1.5 text-sm font-medium text-foreground/80 outline-none transition-colors active:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-accent"
+          className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-1.5 text-sm font-medium text-foreground/80 outline-none transition-colors active:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-accent"
         >{task.key}</button>
         <Button variant="ghost" size={phone ? 'icon-lg' : 'icon-sm'} aria-label="Copy link to this task" title="Copy link" onClick={() => copyTaskLink(task.id)}><Link2Icon /></Button>
         <span className="grow" />
-        {pos >= 0 ? <span className="mr-1 text-xs tabular-nums text-muted-foreground max-sm:hidden">{pos + 1} / {order.length}</span> : null}
+        {pos >= 0 ? <span className="mr-1 shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground max-sm:hidden">{pos + 1} / {order.length}</span> : null}
         <Button variant="ghost" size={phone ? 'icon-xl' : 'icon-sm'} aria-label="Previous task" title="Previous (K)" disabled={!prev} onClick={() => prev && openTask(prev)}><ChevronUpIcon /></Button>
         <Button variant="ghost" size={phone ? 'icon-xl' : 'icon-sm'} aria-label="Next task" title="Next (J)" disabled={!next} onClick={() => next && openTask(next)}><ChevronDownIcon /></Button>
         {phone ? <TaskMenu task={task} /> : (
           <>
             <span className="mx-1 h-4 w-px bg-border" />
-            <Button variant="ghost" size="sm" onClick={() => toggleDone(task.id)} title={isDone ? 'Reopen (X)' : 'Mark done (X)'}><CheckIcon />{isDone ? 'Reopen' : 'Done'}</Button>
+            <Button variant="ghost" size="icon-sm" aria-label={isDone ? 'Reopen task' : 'Mark done'} onClick={() => toggleDone(task.id)} title={isDone ? 'Reopen (X)' : 'Mark done (X)'}><CheckIcon /></Button>
             <Button variant="ghost" size="icon-sm" aria-label={task.status === 'cancelled' ? 'Reopen task' : 'Cancel task'} title={task.status === 'cancelled' ? 'Reopen' : 'Cancel (keeps it, marked as declined)'} onClick={() => cancelTask(task.id)}><BanIcon /></Button>
             <Button variant="ghost" size="icon-sm" aria-label="Delete task" title="Delete (⌫)" onClick={() => deleteTask(task.id)}><Trash2Icon /></Button>
             <TaskMenu task={task} className="opacity-100" />
