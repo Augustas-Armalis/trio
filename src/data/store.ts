@@ -8,7 +8,7 @@ import { toastManager } from '@/components/ui/toast'
 import { splitBody, uid } from '../lib/util'
 
 export type ToastAction = { label: string; run: () => void }
-export type ComposeInit = { body?: string; status?: Status; due?: string | null; project?: string; assignee?: Person | null; priority?: Priority }
+export type ComposeInit = { body?: string; status?: Status; due?: string | null; project?: string; assignee?: Person | null; assignees?: Person[]; priority?: Priority }
 export type PalettePage = 'root' | 'status' | 'priority' | 'assignee' | 'due' | 'project'
 export type ProjectDialog = { mode: 'new' } | { mode: 'edit'; id: string }
 
@@ -90,7 +90,11 @@ function normTask(d: RawDoc): Task {
     project: typeof d.project === 'string' && d.project ? d.project : GENERAL_ID,
     status,
     priority: PRIO_SET.has(d.priority as Priority) ? (d.priority as Priority) : 'medium',
-    assignee: PEOPLE_SET.has(d.assignee as string) ? (d.assignee as Person) : null,
+    ...(() => {
+      const list = (Array.isArray(d.assignees) ? d.assignees : PEOPLE_SET.has(d.assignee as string) ? [d.assignee] : []).filter((x): x is Person => PEOPLE_SET.has(x as string))
+      const uniq = [...new Set(list)]
+      return { assignees: uniq, assignee: uniq[0] ?? null }
+    })(),
     due: typeof d.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.due) ? d.due : null,
     progress: Math.min(100, Math.max(0, num(d.progress, status === 'done' ? 100 : 0))),
     images: Array.isArray(d.images) ? (d.images.filter((x) => typeof x === 'string') as string[]) : [],
@@ -225,7 +229,10 @@ function applyLocal(id: string, patch: Partial<Task>) {
 export function updateTask(id: string, patch: Partial<Task>) {
   const cur = getState().tasks.find((t) => t.id === id)
   if (!cur) return
-  const full: Partial<Task> = { ...patch, updatedAt: Date.now() }
+  const p: Partial<Task> = { ...patch }
+  if (p.assignees) { p.assignees = [...new Set(p.assignees)]; p.assignee = p.assignees[0] ?? null }
+  else if ('assignee' in p) p.assignees = p.assignee ? [p.assignee] : []
+  const full: Partial<Task> = { ...p, updatedAt: Date.now() }
   applyLocal(id, full)
   backend.update('tasks', id, full as Record<string, unknown>).catch(fail('save that change'))
 }
@@ -263,6 +270,7 @@ export type NewTask = {
   status?: Status
   priority?: Priority
   assignee?: Person | null
+  assignees?: Person[]
   due?: string | null
   images?: string[]
 }
@@ -277,7 +285,7 @@ export function createTask(n: NewTask): string {
   createdHere.add(id)
   const task: Task = {
     id, key, body: n.body.trim(), project, status,
-    priority: n.priority ?? 'medium', assignee: n.assignee === undefined ? s.me : n.assignee,
+    priority: n.priority ?? 'medium', ...(() => { const a = n.assignees ?? (n.assignee === undefined ? (s.me ? [s.me] : []) : n.assignee ? [n.assignee] : []); return { assignees: a, assignee: a[0] ?? null } })(),
     due: n.due ?? null, progress: status === 'done' ? 100 : 0, images: n.images ?? [],
     rank: -now, createdBy: s.me, createdAt: now, updatedAt: now,
     doneAt: status === 'done' ? now : null, prev: null,
@@ -443,7 +451,7 @@ export function updateTasks(ids: string[], patch: (t: Task) => Partial<Task>) {
 export function duplicateTask(id: string) {
   const t = getState().tasks.find((x) => x.id === id)
   if (!t) return
-  const nid = createTask({ body: t.body, project: t.project, priority: t.priority, assignee: t.assignee, due: t.due, images: t.images })
+  const nid = createTask({ body: t.body, project: t.project, priority: t.priority, assignees: t.assignees, due: t.due, images: t.images })
   const key = getState().tasks.find((x) => x.id === nid)?.key
   toast(key ? `${key} created` : 'Task duplicated', { label: 'Open', run: () => openTask(nid) })
 }
@@ -483,8 +491,8 @@ export function useVisibleTasks(): Task[] {
     const needle = q.trim().toLowerCase()
     return tasks.filter((t) => {
       if (scope.kind === 'project' && t.project !== scope.id) return false
-      if (scope.kind === 'mine' && t.assignee !== me) return false
-      if (fPeople.length && !(t.assignee && fPeople.includes(t.assignee))) return false
+      if (scope.kind === 'mine' && !(me && t.assignees.includes(me))) return false
+      if (fPeople.length && !t.assignees.some((a) => fPeople.includes(a))) return false
       if (fPriority.length && !fPriority.includes(t.priority)) return false
       if (needle && !t.body.toLowerCase().includes(needle) && !t.key.toLowerCase().includes(needle)) return false
       return true

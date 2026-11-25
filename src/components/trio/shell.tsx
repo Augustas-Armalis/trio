@@ -39,7 +39,7 @@ export function AppSidebar() {
       if (t.status === 'done') continue
       all++
       m.set(t.project, (m.get(t.project) ?? 0) + 1)
-      if (t.assignee === me) mine++
+      if (me && t.assignees.includes(me)) mine++
     }
     return { m, mine, all }
   }, [tasks, me])
@@ -128,7 +128,7 @@ export function useScopeTitle() {
   const me = useStore((s) => s.me)
   const title = scope.kind === 'all' ? 'All tasks' : scope.kind === 'mine' ? 'My tasks' : scope.id === GENERAL_ID ? 'General' : projects.find((p) => p.id === scope.id)?.name ?? 'General'
   const stat = useMemo(() => {
-    const inScope = tasks.filter((t) => (scope.kind === 'project' ? t.project === scope.id : scope.kind === 'mine' ? t.assignee === me : true))
+    const inScope = tasks.filter((t) => (scope.kind === 'project' ? t.project === scope.id : scope.kind === 'mine' ? !!me && t.assignees.includes(me) : true))
     return { done: inScope.filter((t) => t.status === 'done').length, total: inScope.length }
   }, [tasks, scope, me])
   return { title, stat }
@@ -167,7 +167,7 @@ function ScopeMenu({ title }: { title: string }) {
   const me = useStore((s) => s.me)
   const open = useMemo(() => {
     const m = new Map<string, number>(); let mine = 0, all = 0
-    for (const t of tasks) { if (t.status === 'done') continue; all++; m.set(t.project, (m.get(t.project) ?? 0) + 1); if (t.assignee === me) mine++ }
+    for (const t of tasks) { if (t.status === 'done') continue; all++; m.set(t.project, (m.get(t.project) ?? 0) + 1); if (me && t.assignees.includes(me)) mine++ }
     return { m, mine, all }
   }, [tasks, me])
   const is = (id: string) => scope.kind === 'project' && scope.id === id

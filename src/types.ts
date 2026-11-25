@@ -14,6 +14,8 @@ export interface Task {
   project: string
   status: Status
   priority: Priority
+  /** Everyone this is for. `assignee` is the first of them (kept for older copies and simple checks). */
+  assignees: Person[]
   assignee: Person | null
   /** YYYY-MM-DD in the viewer's local calendar. */
   due: string | null

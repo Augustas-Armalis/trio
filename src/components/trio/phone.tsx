@@ -84,7 +84,7 @@ function ScopeDrawer({ title }: { title: string }) {
       if (t.status === 'done') continue
       all++
       m.set(t.project, (m.get(t.project) ?? 0) + 1)
-      if (t.assignee === me) mine++
+      if (me && t.assignees.includes(me)) mine++
     }
     return { m, mine, all }
   }, [tasks, me])

@@ -44,7 +44,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
           <Indicators task={task} />
           {showProject ? <ProjectChip project={task.project} className="min-w-0 shrink" /> : null}
           <span className="grow" />
-          <AssigneePicker variant="icon" who={task.assignee} onPick={(p) => updateTask(task.id, { assignee: p })} />
+          <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
         </div>
       ) : (
         <div className={cn('relative z-10 ml-7 flex min-w-0 items-center gap-0.5', task.status === 'done' && 'opacity-55')}>
@@ -53,7 +53,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
           <Indicators task={task} />
           {showProject ? <ProjectChip project={task.project} className="ml-1" /> : null}
           <span className="grow" />
-          <AssigneePicker variant="icon" who={task.assignee} onPick={(p) => updateTask(task.id, { assignee: p })} />
+          <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
         </div>
       )}
     </>

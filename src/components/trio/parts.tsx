@@ -1,4 +1,4 @@
-import { CalendarIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Icon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
+import { CalendarIcon, CheckIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Icon, MoreHorizontalIcon, Trash2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle } from '@/components/ui/drawer'
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuSub, MenuSubPopup, MenuSubTrigger, MenuTrigger } from '@/components/ui/menu'
-import { DuePicker, AssigneePicker, DueEditor, PersonList, PickItem, PriorityList, PriorityPicker, ProjectList, StatusList, useIsPhone, ProjectPicker } from './picker'
-import { PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
+import { DuePicker, AssigneePicker, DueEditor, PeopleList, PickItem, PriorityList, PriorityPicker, ProjectList, StatusList, useIsPhone, ProjectPicker } from './picker'
+import { AvatarStack, PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
 import { STATUS, PRIORITY } from '@/data/people'
 
 export const titleOf = _t
@@ -69,8 +69,8 @@ export function TaskMenu({ task, className }: { task: Task; className?: string }
           <MenuSub>
             <MenuSubTrigger>Assign to</MenuSubTrigger>
             <MenuSubPopup>
-              {PEOPLE.map((p) => <MenuItem key={p.id} onClick={() => updateTask(task.id, { assignee: p.id })}><PersonAvatar who={p.id} size={18} />{PERSON[p.id].name}</MenuItem>)}
-              <MenuItem onClick={() => updateTask(task.id, { assignee: null })}><PersonAvatar who={null} size={18} />Unassigned</MenuItem>
+              {PEOPLE.map((p) => <MenuItem key={p.id} closeOnClick={false} onClick={() => updateTask(task.id, { assignees: task.assignees.includes(p.id) ? task.assignees.filter((x) => x !== p.id) : [...task.assignees, p.id] })}><PersonAvatar who={p.id} size={18} />{PERSON[p.id].name}{task.assignees.includes(p.id) ? <CheckIcon className="ml-auto" /> : null}</MenuItem>)}
+              <MenuItem onClick={() => updateTask(task.id, { assignees: [] })}><PersonAvatar who={null} size={18} />Unassigned</MenuItem>
             </MenuSubPopup>
           </MenuSub>
           <MenuSub>
@@ -129,7 +129,7 @@ export function ActionsDrawer() {
                 </PickItem>
                 <PickItem chevron hint={STATUS[shown.status].label} onClick={() => setView('status')}><span className="grid size-6 shrink-0 place-items-center"><StatusIcon status={shown.status} progress={shown.progress} size={20} /></span>Status</PickItem>
                 <PickItem chevron hint={PRIORITY[shown.priority].label} onClick={() => setView('priority')}><span className="grid size-6 shrink-0 place-items-center"><PriorityIcon priority={shown.priority} size={20} /></span>Priority</PickItem>
-                <PickItem chevron hint={shown.assignee ? PERSON[shown.assignee].name : 'Nobody'} onClick={() => setView('assignee')}><span className="grid size-6 shrink-0 place-items-center"><PersonAvatar who={shown.assignee} size={24} /></span>Assign to</PickItem>
+                <PickItem chevron hint={shown.assignees.length ? shown.assignees.map((a) => PERSON[a].name).join(', ') : 'Nobody'} onClick={() => setView('assignee')}><span className="grid size-6 shrink-0 place-items-center"><AvatarStack who={shown.assignees} size={24} /></span>Assign to</PickItem>
                 <PickItem chevron hint={shown.due ? shown.due.slice(5) : 'None'} onClick={() => setView('due')}><span className="grid size-6 shrink-0 place-items-center"><CalendarIcon className="size-5 text-muted-foreground" /></span>Due date</PickItem>
                 <PickItem chevron hint={projectName} onClick={() => setView('project')}><span className="grid size-6 shrink-0 place-items-center"><ProjectDot hue={null} size={10} /></span>Move to project</PickItem>
                 <div className="my-1 h-px bg-border" />
@@ -138,7 +138,7 @@ export function ActionsDrawer() {
               </div>
             ) : view === 'status' ? <StatusList status={shown.status} onPick={(s) => { setStatus(shown.id, s); close() }} />
               : view === 'priority' ? <PriorityList priority={shown.priority} onPick={(p) => { updateTask(shown.id, { priority: p }); close() }} />
-              : view === 'assignee' ? <PersonList who={shown.assignee} onPick={(p) => { updateTask(shown.id, { assignee: p }); close() }} />
+              : view === 'assignee' ? <PeopleList who={shown.assignees} onChange={(a) => updateTask(shown.id, { assignees: a })} />
               : view === 'due' ? <DueEditor due={shown.due} onPick={(d) => { updateTask(shown.id, { due: d }); close() }} />
               : <ProjectList project={shown.project} onPick={(p) => { updateTask(shown.id, { project: p }); close() }} />
           ) : null}
@@ -154,7 +154,7 @@ export function TaskMeta({ task, menu = true }: { task: Task; menu?: boolean }) 
     <>
       <PriorityPicker variant="icon" priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} />
       <DuePicker variant="icon" due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} />
-      <AssigneePicker variant="icon" who={task.assignee} onPick={(p) => updateTask(task.id, { assignee: p })} />
+      <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
       {menu ? (
         <Button
           variant="ghost" size="icon-sm" aria-label={`Delete ${task.key}`} title="Delete (you can undo)"

@@ -11,7 +11,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { Drawer, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer'
 import { Popover, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
 import { PRESETS } from '@/lib/presets'
-import { PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
+import { AvatarStack, PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
 
 const stop = (e: { stopPropagation(): void }) => e.stopPropagation()
 
@@ -145,15 +145,33 @@ export function PersonList({ who, onPick }: { who: Person | null; onPick: (p: Pe
   )
 }
 
-export function AssigneePicker({ who, onPick, variant = 'field', pill }: { who: Person | null; onPick: (p: Person | null) => void; variant?: 'icon' | 'field'; pill?: boolean }) {
+/** Pick any number of people: each tap toggles one and the list stays open. */
+export function PeopleList({ who, onChange }: { who: Person[]; onChange: (p: Person[]) => void }) {
+  const toggle = (id: Person) => onChange(who.includes(id) ? who.filter((x) => x !== id) : [...who, id])
+  return (
+    <div role="listbox" aria-multiselectable="true" className="flex flex-col gap-px">
+      {PEOPLE.map((p) => (
+        <PickItem key={p.id} active={who.includes(p.id)} onClick={() => toggle(p.id)}>
+          <PersonAvatar who={p.id} size={24} />{p.name}
+        </PickItem>
+      ))}
+      <PickItem active={!who.length} onClick={() => onChange([])}><PersonAvatar who={null} size={24} />Unassigned</PickItem>
+    </div>
+  )
+}
+
+const namesOf = (who: Person[]) => (who.length ? who.map((w) => PERSON[w].name).join(', ') : 'nobody')
+
+export function AssigneePicker({ who, onPick, variant = 'field', pill }: { who: Person[]; onPick: (p: Person[]) => void; variant?: 'icon' | 'field'; pill?: boolean }) {
+  const aria = `Assigned to ${namesOf(who)}`
   return (
     <Picker
       title="Assign to"
       align={variant === 'icon' ? 'end' : 'start'}
-      button={pill ? { ...pillBtn, className: 'shrink-0 rounded-full pl-1', 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` } : variant === 'icon' ? { variant: 'ghost', size: 'icon-sm', 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` } : { ...fieldBtn, 'aria-label': `Assigned to ${who ? PERSON[who].name : 'nobody'}` }}
-      label={variant === 'icon' ? <PersonAvatar who={who} size={24} /> : <><PersonAvatar who={who} size={pill ? 22 : 20} />{who ? PERSON[who].name : 'Unassigned'}{pill ? null : <ChevronDownIcon className="opacity-40" />}</>}
+      button={pill ? { ...pillBtn, className: 'shrink-0 rounded-full pl-1', 'aria-label': aria } : variant === 'icon' ? { variant: 'ghost', size: 'icon-sm', 'aria-label': aria } : { ...fieldBtn, 'aria-label': aria }}
+      label={variant === 'icon' ? <AvatarStack who={who} size={24} /> : <><AvatarStack who={who} size={pill ? 22 : 20} /><span className="truncate">{who.length ? (who.length > 2 ? `${who.length} people` : who.map((w) => PERSON[w].name).join(', ')) : 'Unassigned'}</span>{pill ? null : <ChevronDownIcon className="opacity-40" />}</>}
     >
-      {(close) => <PersonList who={who} onPick={(p) => { onPick(p); close() }} />}
+      {() => <PeopleList who={who} onChange={onPick} />}
     </Picker>
   )
 }

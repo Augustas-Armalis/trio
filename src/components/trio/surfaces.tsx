@@ -50,7 +50,7 @@ function ComposeBody({ phone }: { phone?: boolean }) {
   const now = useStore((s) => s.today)
   const [body, setBody] = useState('')
   const [images, setImages] = useState<string[]>([])
-  const [assignee, setAssignee] = useState<Person | null>(init.assignee === undefined ? me : init.assignee)
+  const [assignees, setAssignees] = useState<Person[]>(init.assignees ?? (init.assignee === undefined ? (me ? [me] : []) : init.assignee ? [init.assignee] : []))
   const [due, setDue] = useState<string | null>(init.due ?? null)
   const [priority, setPriority] = useState<Priority>(init.priority ?? 'medium')
   const [status, setStatusState] = useState<Status>(init.status ?? 'todo')
@@ -62,7 +62,7 @@ function ComposeBody({ phone }: { phone?: boolean }) {
 
   const submit = () => {
     if (!canCreate) return
-    const id = createTask({ body: body.trim() || 'Image', project, status, priority, assignee, due, images })
+    const id = createTask({ body: body.trim() || 'Image', project, status, priority, assignees, due, images })
     const key = getState().tasks.find((t) => t.id === id)?.key
     closeCompose()
     toast(key ? `${key} created` : 'Task created', { label: 'Open', run: () => openTask(id) })
@@ -98,12 +98,12 @@ function ComposeBody({ phone }: { phone?: boolean }) {
         <div className="mt-6 flex flex-col gap-3">
           <div className={row}>
             <span className="w-14 shrink-0 text-sm text-muted-foreground">For</span>
-            <div className={scroller} role="radiogroup" aria-label="Assign to">
+            <div className={scroller} role="group" aria-label="Assign to (pick any)">
               {PEOPLE.map((p) => (
                 <Button
-                  key={p.id} role="radio" aria-checked={assignee === p.id} variant="secondary" size="lg" className={cn('shrink-0 rounded-full pl-1', assignee === p.id && chipOn)}
-                  style={assignee === p.id ? { boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--p-${p.id}) 60%, transparent)`, background: `color-mix(in oklab, var(--p-${p.id}) 16%, #232326)` } : undefined}
-                  onClick={() => setAssignee(assignee === p.id ? null : p.id)}
+                  key={p.id} aria-pressed={assignees.includes(p.id)} variant="secondary" size="lg" className={cn('shrink-0 rounded-full pl-1', assignees.includes(p.id) && chipOn)}
+                  style={assignees.includes(p.id) ? { boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--p-${p.id}) 60%, transparent)`, background: `color-mix(in oklab, var(--p-${p.id}) 16%, #232326)` } : undefined}
+                  onClick={() => setAssignees(assignees.includes(p.id) ? assignees.filter((x) => x !== p.id) : [...assignees, p.id])}
                 >
                   <PersonAvatar who={p.id} size={24} />{PERSON[p.id].name}
                 </Button>
@@ -234,7 +234,7 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
           <Prop label="Status"><StatusPicker status={task.status} progress={task.progress} onPick={(s) => setStatus(task.id, s)} /></Prop>
           <Prop label="Progress"><Progress value={task.progress} onChange={(p) => setProgress(task.id, p)} /></Prop>
           <Prop label="Priority"><PriorityPicker priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} /></Prop>
-          <Prop label="For"><AssigneePicker who={task.assignee} onPick={(p) => updateTask(task.id, { assignee: p })} /></Prop>
+          <Prop label="For"><AssigneePicker who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} /></Prop>
           <Prop label="Due"><DuePicker due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} /></Prop>
           <Prop label="Project"><ProjectPicker project={task.project} onPick={(p) => updateTask(task.id, { project: p })} /></Prop>
         </dl>

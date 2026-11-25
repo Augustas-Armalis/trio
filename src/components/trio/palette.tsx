@@ -10,7 +10,7 @@ import { PRESETS } from '@/lib/presets'
 import { Command, CommandCollection, CommandDialog, CommandDialogPopup, CommandEmpty, CommandFooter, CommandGroup, CommandGroupLabel, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command'
 import { Dialog, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from '@/components/ui/dialog'
 import { Kbd } from '@/components/ui/kbd'
-import { PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
+import { AvatarStack, PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
 
 type Item = { value: string; label: string; icon?: ReactNode; hint?: ReactNode; shortcut?: string; keep?: boolean; run: () => void }
 type Group = { value: string; items: Item[] }
@@ -33,8 +33,8 @@ export function CommandPalette() {
         status: STATUSES.map((s) => ({ value: `st-${s.id}`, label: s.label, icon: <StatusIcon status={s.id} progress={50} size={16} />, hint: target.status === s.id ? 'Current' : undefined, run: act(() => setStatus(target.id, s.id)) })),
         priority: PRIORITIES.map((p) => ({ value: `pr-${p.id}`, label: p.label, icon: <PriorityIcon priority={p.id} size={16} />, hint: target.priority === p.id ? 'Current' : undefined, run: act(() => updateTask(target.id, { priority: p.id })) })),
         assignee: [
-          ...PEOPLE.map((p) => ({ value: `as-${p.id}`, label: p.name, icon: <PersonAvatar who={p.id} size={18} />, hint: target.assignee === p.id ? 'Current' : undefined, run: act(() => updateTask(target.id, { assignee: p.id })) })),
-          { value: 'as-none', label: 'Unassigned', icon: <PersonAvatar who={null} size={18} />, run: act(() => updateTask(target.id, { assignee: null })) },
+          ...PEOPLE.map((p) => ({ value: `as-${p.id}`, label: p.name, icon: <PersonAvatar who={p.id} size={18} />, hint: target.assignees.includes(p.id) ? 'Assigned' : undefined, keep: true, run: () => updateTask(target.id, { assignees: target.assignees.includes(p.id) ? target.assignees.filter((x) => x !== p.id) : [...target.assignees, p.id] }) })),
+          { value: 'as-none', label: 'Unassigned', icon: <PersonAvatar who={null} size={18} />, run: act(() => updateTask(target.id, { assignees: [] })) },
         ],
         due: [
           ...PRESETS(now).map((p) => ({ value: `du-${p.label}`, label: p.label, hint: p.date.slice(5), icon: <CalendarDaysIcon className={ic} />, run: act(() => updateTask(target.id, { due: p.date })) })),
@@ -58,7 +58,7 @@ export function CommandPalette() {
           { value: 'do-done', label: isDone ? 'Reopen' : 'Mark done', icon: <CheckIcon className={ic} />, shortcut: 'X', run: act(() => toggleDone(target.id)) },
           { value: 'do-status', label: 'Set status…', icon: <StatusIcon status={target.status} progress={target.progress} size={16} />, shortcut: 'S', keep: true, run: () => openPalette('status', target.id) },
           { value: 'do-priority', label: 'Set priority…', icon: <PriorityIcon priority={target.priority} size={16} />, shortcut: 'P', keep: true, run: () => openPalette('priority', target.id) },
-          { value: 'do-assign', label: 'Assign to…', icon: <PersonAvatar who={target.assignee} size={18} />, shortcut: 'A', keep: true, run: () => openPalette('assignee', target.id) },
+          { value: 'do-assign', label: 'Assign to…', icon: <AvatarStack who={target.assignees} size={18} />, shortcut: 'A', keep: true, run: () => openPalette('assignee', target.id) },
           { value: 'do-due', label: 'Set due date…', icon: <CalendarDaysIcon className={ic} />, shortcut: 'D', keep: true, run: () => openPalette('due', target.id) },
           { value: 'do-move', label: 'Move to project…', icon: <FolderIcon className={ic} />, shortcut: 'M', keep: true, run: () => openPalette('project', target.id) },
           { value: 'do-copy', label: `Copy ${target.key}`, icon: <ClipboardCopyIcon className={ic} />, run: act(() => { navigator.clipboard?.writeText(target.key).then(() => toast(`Copied ${target.key}`), () => undefined) }) },

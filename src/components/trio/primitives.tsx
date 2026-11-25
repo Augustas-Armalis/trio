@@ -85,6 +85,17 @@ export function PersonAvatar({ who, size = 24, className }: { who: Person | null
   )
 }
 
+/** Overlapping avatars for everyone a task is for; an outlined empty one when nobody. */
+export function AvatarStack({ who, size = 24 }: { who: Person[]; size?: number }) {
+  if (!who.length) return <PersonAvatar who={null} size={size} />
+  const shown = who.slice(0, 3)
+  return (
+    <span className="inline-flex items-center" aria-label={who.map((w) => PERSON[w].name).join(', ')}>
+      {shown.map((w, i) => <span key={w} className="rounded-full ring-2 ring-background" style={{ marginLeft: i ? -size * 0.32 : 0, zIndex: shown.length - i }}><PersonAvatar who={w} size={size} /></span>)}
+    </span>
+  )
+}
+
 export function ProjectDot({ hue, size = 8 }: { hue: number | null; size?: number }) {
   return <span className="inline-block shrink-0 rounded-full" style={{ width: size, height: size, background: hue == null ? 'var(--muted-foreground)' : `oklch(0.76 0.1 ${hue})` }} />
 }

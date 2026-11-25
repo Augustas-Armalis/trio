@@ -35,7 +35,7 @@ export function PhoneCompose({ init }: { init: ComposeInit }) {
   const scope = useStore((s) => s.scope)
   const [body, setBody] = useState(init.body ?? '')
   const [images, setImages] = useState<string[]>([])
-  const [assignee, setAssignee] = useState<Person | null>(init.assignee === undefined ? me : init.assignee)
+  const [assignees, setAssignees] = useState<Person[]>(init.assignees ?? (init.assignee === undefined ? (me ? [me] : []) : init.assignee ? [init.assignee] : []))
   const [due, setDue] = useState<string | null>(init.due ?? null)
   const [priority, setPriority] = useState<Priority>(init.priority ?? 'medium')
   const [status, setStatus] = useState<Status>(init.status ?? 'todo')
@@ -47,7 +47,7 @@ export function PhoneCompose({ init }: { init: ComposeInit }) {
   const submit = () => {
     if (!canCreate) return
     sent.current = true
-    const id = createTask({ body: body.trim() || 'Image', project, status, priority, assignee, due, images })
+    const id = createTask({ body: body.trim() || 'Image', project, status, priority, assignees, due, images })
     const key = getState().tasks.find((t) => t.id === id)?.key
     navigator.vibrate?.(8)
     closeCompose()
@@ -57,7 +57,7 @@ export function PhoneCompose({ init }: { init: ComposeInit }) {
   const close = () => {
     const text = body.trim()
     closeCompose()
-    if (text && !sent.current) toast('Draft discarded', { label: 'Undo', run: () => openCompose({ ...init, body: text, assignee, due, priority, status, project }) })
+    if (text && !sent.current) toast('Draft discarded', { label: 'Undo', run: () => openCompose({ ...init, body: text, assignees, due, priority, status, project }) })
   }
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -82,7 +82,7 @@ export function PhoneCompose({ init }: { init: ComposeInit }) {
       </div>
       <div className="shrink-0 border-t bg-popover px-3 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
         <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Task details">
-          <AssigneePicker pill who={assignee} onPick={setAssignee} />
+          <AssigneePicker pill who={assignees} onPick={setAssignees} />
           <DuePicker pill due={due} onPick={setDue} />
           <PriorityPicker pill priority={priority} onPick={setPriority} />
           <ProjectPicker pill project={project} onPick={setProject} />

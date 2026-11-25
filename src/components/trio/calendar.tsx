@@ -7,7 +7,7 @@ import { useDrag } from '@/lib/drag'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverPopup, PopoverTrigger } from '@/components/ui/popover'
-import { PersonAvatar, PriorityIcon, StatusIcon } from './primitives'
+import { AvatarStack, PriorityIcon, StatusIcon } from './primitives'
 import { titleOf } from './parts'
 import { useIsPhone } from './picker'
 
@@ -141,7 +141,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
             <button key={t.id} className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 text-left active:bg-accent" onClick={() => openTask(t.id)}>
               <StatusIcon status={t.status} progress={t.progress} size={20} />
               <span className={cn('min-w-0 flex-1 truncate text-[15px]', t.status === 'done' && 'text-muted-foreground')}>{titleOf(t)}</span>
-              <PriorityIcon priority={t.priority} /><PersonAvatar who={t.assignee} size={24} />
+              <PriorityIcon priority={t.priority} /><AvatarStack who={t.assignees} size={24} />
             </button>
           )) : <p className="px-1 text-muted-foreground">Nothing due.</p>}
         </div>
