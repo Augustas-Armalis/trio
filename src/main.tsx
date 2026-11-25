@@ -3,7 +3,7 @@ import './index.css'
 import { App } from './App'
 import { connectCloud, createLocal } from './data/backend'
 import { makeFixtures } from './data/fixtures'
-import { consumeJoinLink, createGithub, loadGithubConfig } from './data/github'
+import { consumeRoomLink, createRoom, loadRoom } from './data/room'
 import { init } from './data/store'
 
 async function boot() {
@@ -18,10 +18,10 @@ async function boot() {
   // The shared build runs inside the Claude artifact viewer and talks to its built-in storage.
   // Anywhere else (GitHub Pages, a double-clicked file) it keeps everything in this browser.
   const cloud = fx === null ? await connectCloud().catch(() => null) : null
-  // A join link (#join=...) or a saved token turns on sync through a private GitHub repo.
-  if (fx === null && !cloud) consumeJoinLink()
-  const gh = fx === null && !cloud ? loadGithubConfig() : null
-  const backend = cloud ?? (gh ? createGithub(gh) : createLocal(fx !== null ? { persist: false, seed: makeFixtures(Number(fx) || 0) } : { persist: true }))
+  // A room link (#room=...) turns on shared sync with nothing to set up.
+  if (fx === null && !cloud) consumeRoomLink()
+  const room = fx === null && !cloud ? loadRoom() : null
+  const backend = cloud ?? (room ? createRoom(room) : createLocal(fx !== null ? { persist: false, seed: makeFixtures(Number(fx) || 0) } : { persist: true }))
   await init(backend)
 }
 boot()

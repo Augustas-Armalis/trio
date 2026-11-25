@@ -46,7 +46,7 @@ export function AppSidebar() {
 
   const sync = mode === 'local'
     ? { dot: 'border border-muted-foreground bg-transparent', text: 'This device only' }
-    : conn === 'live' ? { dot: 'bg-foreground/70', text: via === 'github' ? 'Synced via GitHub' : 'Live' }
+    : conn === 'live' ? { dot: 'bg-foreground/70', text: 'Live' }
     : conn === 'connecting' ? { dot: 'bg-muted-foreground/50', text: 'Connecting' }
     : { dot: 'bg-destructive', text: conn === 'slow' ? 'Can’t reach the server' : 'Disconnected' }
 

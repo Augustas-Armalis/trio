@@ -76,7 +76,7 @@ function ScopeDrawer({ title }: { title: string }) {
   const me = useStore((s) => s.me)
   const mode = useStore((s) => s.mode)
   const via = useStore((s) => s.via)
-  const syncState = mode === 'local' ? 'Sync across devices' : via === 'github' ? 'Synced via GitHub' : 'Synced'
+  const syncState = mode === 'local' ? 'Sync across devices' : 'Synced'
   const counts = useMemo(() => {
     const m = new Map<string, number>()
     let mine = 0, all = 0

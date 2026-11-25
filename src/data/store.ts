@@ -15,7 +15,7 @@ export type ProjectDialog = { mode: 'new' } | { mode: 'edit'; id: string }
 export interface State {
   ready: boolean
   mode: 'cloud' | 'local'
-  via: 'github' | null
+  via: 'room' | null
   syncOpen: boolean
   conn: Conn
   tasks: Task[]
