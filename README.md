@@ -82,3 +82,5 @@ DIRECTION.md           the design direction written before the first line of UI
 
 - Memoji heads are Memoji-style avatars from github.com/alohe/avatars and github.com/Wimell/Tapback-Memojis (both MIT), used here as placeholder people. The mark is `tri-blade` from the design-engine's traced logo library.
 - Removing a status or priority needs a data migration: both are stored as strings on each task.
+
+For anyone (or any coding agent) picking this project up: read [HANDOVER.md](HANDOVER.md).
