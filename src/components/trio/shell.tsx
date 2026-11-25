@@ -121,7 +121,7 @@ export const VIEWS: { id: ViewKind; label: string; icon: typeof ListIcon; key: s
   { id: 'board', label: 'Board', icon: Columns3Icon, key: '2' },
   { id: 'calendar', label: 'Calendar', icon: CalendarDaysIcon, key: '3' },
 ]
-export const GROUPS: { id: GroupBy; label: string }[] = [{ id: 'status', label: 'Status' }, { id: 'person', label: 'Person' }, { id: 'priority', label: 'Priority' }, { id: 'due', label: 'Due date' }]
+export const GROUPS: { id: GroupBy; label: string }[] = [{ id: 'status', label: 'Status' }, { id: 'person', label: 'Person' }, { id: 'priority', label: 'Priority' }, { id: 'due', label: 'Due date' }, { id: 'project', label: 'Project' }]
 export const SORTS: { id: SortBy; label: string }[] = [{ id: 'manual', label: 'Manual' }, { id: 'due', label: 'Due date' }, { id: 'priority', label: 'Priority' }, { id: 'newest', label: 'Newest' }]
 
 export function useScopeTitle() {

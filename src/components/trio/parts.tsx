@@ -169,11 +169,22 @@ export function TaskMeta({ task, menu = true }: { task: Task; menu?: boolean }) 
   )
 }
 
+/** Each project has its own colour; General stays neutral. */
+export const projectColor = (hue: number | null | undefined) => (hue == null ? 'var(--muted-foreground)' : `oklch(0.78 0.12 ${hue})`)
+
+/** A thin coloured edge on a task, so in All you can see which project it belongs to at a glance. */
+export function ProjectBar({ project }: { project: string }) {
+  const projects = useStore((s) => s.projects)
+  const cur = project === GENERAL_ID ? null : projects.find((p) => p.id === project)
+  return <span aria-hidden className="pointer-events-none absolute inset-y-1.5 left-0 z-10 w-[3px] rounded-full opacity-90" style={{ background: projectColor(cur?.hue) }} />
+}
+
 export function ProjectChip({ project, className }: { project: string; className?: string }) {
   const projects = useStore((s) => s.projects)
   const cur = project === GENERAL_ID ? null : projects.find((p) => p.id === project)
+  const tint = cur ? { ['--ph' as string]: projectColor(cur.hue) } : undefined
   return (
-    <Badge variant="secondary" size="lg" className={cn('max-w-40 gap-1.5 truncate font-normal text-muted-foreground', className)}>
+    <Badge variant="secondary" size="lg" style={tint} className={cn('max-w-40 gap-1.5 truncate font-normal text-muted-foreground', cur && 'bg-[color-mix(in_oklab,var(--ph)_15%,transparent)] text-[color-mix(in_oklab,var(--ph)_85%,white)]', className)}>
       <ProjectDot hue={cur?.hue ?? null} size={7} />
       <span className="truncate">{cur?.name ?? 'General'}</span>
     </Badge>

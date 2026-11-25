@@ -2,7 +2,7 @@ export type Person = 'augustas' | 'barbora' | 'rokas'
 export type Status = 'backlog' | 'todo' | 'in_progress' | 'done' | 'escalated'
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
 export type ViewKind = 'list' | 'board' | 'calendar'
-export type GroupBy = 'status' | 'person' | 'priority' | 'due'
+export type GroupBy = 'status' | 'person' | 'priority' | 'due' | 'project'
 export type SortBy = 'manual' | 'due' | 'priority' | 'newest'
 
 export interface Task {

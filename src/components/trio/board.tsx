@@ -8,7 +8,7 @@ import { useDrag } from '@/lib/drag'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { AssigneePicker, DuePicker, DueText, PriorityPicker, useIsPhone, useIsTouch } from './picker'
-import { Indicators, ProjectChip, StatusBtn, TaskMenu, titleOf } from './parts'
+import { Indicators, ProjectBar, ProjectChip, StatusBtn, TaskMenu, titleOf } from './parts'
 import { PriorityIcon, StatusIcon } from './primitives'
 import { EmptyState } from './list'
 
@@ -20,6 +20,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
   const img = task.images[0]
   return (
     <>
+      {showProject ? <ProjectBar project={task.project} /> : null}
       <span className="-mb-1 ml-9 max-sm:ml-12 text-xs text-muted-foreground">{task.key}</span>
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-1 [&>div:first-child]:-mt-4">
         <div className="relative z-10"><StatusBtn task={task} /></div>

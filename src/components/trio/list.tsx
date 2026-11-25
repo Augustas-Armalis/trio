@@ -12,8 +12,8 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AssigneePicker, DueText, useIsPhone, useIsTouch } from './picker'
-import { Indicators, ProjectChip, StatusBtn, TaskMenu, TaskMeta, titleOf } from './parts'
-import { PersonAvatar, PriorityIcon, StatusIcon } from './primitives'
+import { Indicators, ProjectBar, ProjectChip, projectColor, StatusBtn, TaskMenu, TaskMeta, titleOf } from './parts'
+import { PersonAvatar, PriorityIcon, ProjectDot, StatusIcon } from './primitives'
 import { updateTask } from '@/data/store'
 import { GENERAL_ID } from '@/data/people'
 
@@ -66,6 +66,7 @@ export function TaskRow({ task, showProject, fancy, index = 0, intro = false }: 
   }
   const content = (
     <>
+      {showProject ? <ProjectBar project={task.project} /> : null}
       <div className="relative z-10"><StatusBtn task={task} /></div>
       <div className="min-w-0 py-2 sm:py-0">
         <div className="flex min-w-0 items-center gap-2.5">
@@ -146,13 +147,14 @@ function PhoneMeta({ task, showProject }: { task: Task; showProject: boolean }) 
       {task.priority === 'urgent' || task.priority === 'high' ? <PriorityIcon priority={task.priority} size={13} /> : null}
       {task.due ? <DueText due={task.due} done={done} /> : null}
       {task.status === 'in_progress' ? <span className="tabular-nums text-[var(--amber)]">{task.progress}%</span> : null}
-      {showProject ? <span className="truncate">{pname}</span> : null}
+      {showProject ? <span className="truncate font-medium" style={{ color: projectColor(projects.find((p) => p.id === task.project)?.hue) }}>{pname}</span> : null}
       <Indicators task={task} />
     </div>
   )
 }
 
 export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean }) {
+  const projects = useStore((s) => s.projects)
   const group = useStore((s) => s.group)
   const sort = useStore((s) => s.sort)
   const scope = useStore((s) => s.scope)
@@ -181,6 +183,14 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
         tasks: m.get(k as never)!, compose: { assignee: k === 'none' ? null : (k as 'augustas') },
       }))
     }
+    if (group === 'project') {
+      const m = by((t) => t.project)
+      const order = [GENERAL_ID, ...projects.map((p) => p.id)]
+      return order.filter((id) => m.has(id)).map((id) => {
+        const p = projects.find((x) => x.id === id)
+        return { key: id, label: p?.name ?? 'General', icon: <ProjectDot hue={p?.hue ?? null} size={11} />, tasks: m.get(id)!, compose: { project: id } }
+      })
+    }
     if (group === 'priority') {
       const m = by((t) => t.priority)
       return PRIORITIES.filter((p) => m.has(p.id)).map((p) => ({ key: p.id, label: p.label, icon: <PriorityIcon priority={p.id as Priority} size={18} />, tasks: m.get(p.id)!, compose: { priority: p.id } }))
@@ -195,7 +205,7 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
     const defs: [Bk, string, ComposeInit][] = [['over', 'Overdue', { due: now }], ['today', 'Today', { due: now }], ['tomorrow', 'Tomorrow', { due: addDays(now, 1) }], ['week', 'This week', { due: addDays(now, 3) }], ['later', 'Later', { due: addDays(now, 14) }], ['none', 'No date', {}]]
     const m = by(bucket)
     return defs.filter(([k]) => m.has(k)).map(([k, label, compose]) => ({ key: k, label, tasks: m.get(k)!, compose, icon: k === 'over' ? <span className="size-2 rounded-full bg-destructive" /> : <CalendarIcon className="size-4 text-muted-foreground" /> }))
-  }, [tasks, group, sort, now])
+  }, [tasks, group, sort, now, projects])
 
   const toggle = (k: string) => setCollapsed((c) => { const n = new Set(c); n.has(k) ? n.delete(k) : n.add(k); return n })
   const showProject = scope.kind !== 'project'
