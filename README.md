@@ -2,6 +2,8 @@
 
 A shared task board for three people. Write a task, hand it to Augustas, Barbora or Rokas, give it a day, watch it move to done.
 
+**Live demo (keeps data in your own browser, no sync): https://augustas-armalis.github.io/trio/**
+
 Built in the house stack: **React 19, Tailwind v4, [coss ui](https://coss.com/ui) (Base UI), Motion**, bundled with Vite into one self-contained page. Designed with the design-engine dark canon: graphite, borderless, squircle corners, memoji people, one traced mark.
 
 ## What it does
@@ -53,6 +55,7 @@ npm install
 npm run dev        # http://localhost:5174  (?fixtures=24 sample data, ?fixtures=1000 stress, add &as=barbora to skip the first-run question)
 npm run typecheck
 npm run build      # dist/index.html (single file) and dist/artifact.html (the artifact fragment)
+scripts/deploy-pages.sh   # build and publish the single file to GitHub Pages
 ```
 
 `?fixtures=N` seeds N tasks in memory without touching saved data; it is how the empty, one-task and 1,000-task cases were checked.
