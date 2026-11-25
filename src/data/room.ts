@@ -102,6 +102,8 @@ export function createRoom(secret: string): Backend {
   if (cache) {
     for (const k of ['tasks', 'projects'] as Coll[]) for (const d of cache[k] ?? []) mem[k].set(d.id, d)
     for (const [k, t] of cache.gone ?? []) gone.set(k, t)
+    // A delete record beats a copy that was brought back by the old import bug.
+    for (const c of ['tasks', 'projects'] as Coll[]) for (const [id, d] of [...mem[c]]) if ((gone.get(`${c}/${id}`) ?? 0) >= (d._t ?? 0)) mem[c].delete(id)
   }
   // What this browser held before it joined (local-only days) is added to the shared board ONCE, then dropped.
   // Doing it on every load would bring deleted tasks back, because the old copy never learns about deletes.
