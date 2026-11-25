@@ -21,7 +21,7 @@ function Chip({ task, bind, dragging }: { task: Task; bind: (id: string) => obje
     <div
       role="button" tabIndex={0} data-chip={task.id} style={tint(task)}
       className={cn(
-        'flex h-5.5 min-w-0 cursor-pointer items-center gap-1.5 rounded-md bg-[color-mix(in_oklab,var(--pc)_15%,#1a1a1d)] px-1.75 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[color-mix(in_oklab,var(--pc)_24%,#1e1e21)]',
+        'flex h-5.5 min-w-0 cursor-pointer items-center gap-1.5 rounded-md bg-[color-mix(in_oklab,var(--pc)_15%,#1a1a1a)] px-1.75 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[color-mix(in_oklab,var(--pc)_24%,#1e1e1e)]',
         done && 'opacity-50', dragging && 'opacity-30',
       )}
       onClick={(e) => { e.stopPropagation(); openTask(task.id) }}
@@ -61,7 +61,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
     },
     renderGhost: (id) => {
       const t = tasks.find((x) => x.id === id)
-      return t ? <div style={tint(t)} className="flex h-5.5 w-50 items-center gap-1.5 rounded-md bg-[color-mix(in_oklab,var(--pc)_22%,#222226)] px-1.75 text-xs shadow-xl"><span className="size-1.5 rounded-full bg-[var(--pc)]" /><span className="truncate">{titleOf(t)}</span></div> : null
+      return t ? <div style={tint(t)} className="flex h-5.5 w-50 items-center gap-1.5 rounded-md bg-[color-mix(in_oklab,var(--pc)_22%,#222222)] px-1.75 text-xs shadow-xl"><span className="size-1.5 rounded-full bg-[var(--pc)]" /><span className="truncate">{titleOf(t)}</span></div> : null
     },
   })
   const agenda = selected ? byDay.get(selected) ?? [] : []
@@ -99,7 +99,7 @@ export function CalendarView({ tasks }: { tasks: Task[] }) {
           return (
             <div
               key={day} data-day={day}
-              className={cn('group/day relative flex min-w-0 flex-col gap-1 bg-background p-1.5 max-sm:items-center max-sm:px-0.5 max-sm:py-1 [@media(hover:hover)]:hover:bg-accent/40', outside && 'bg-[#121214]', over === day && 'bg-accent', selected === day && 'max-sm:bg-accent')}
+              className={cn('group/day relative flex min-w-0 flex-col gap-1 bg-background p-1.5 max-sm:items-center max-sm:px-0.5 max-sm:py-1 [@media(hover:hover)]:hover:bg-accent/40', outside && 'bg-[#121212]', over === day && 'bg-accent', selected === day && 'max-sm:bg-accent')}
               onClick={() => setSelected(day === selected ? null : day)}
               onDoubleClick={() => { if (day >= now) openCompose({ due: day }) }}
             >

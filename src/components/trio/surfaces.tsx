@@ -1,9 +1,9 @@
-import { CalendarIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { Link2Icon, CalendarIcon, CheckIcon, ChevronDownIcon, ChevronUpIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Person, Priority, Status, Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES } from '@/data/people'
-import { closeCompose, closeTask, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
+import { closeCompose, closeTask, copyTaskLink, createTask, deleteTask, getState, createProject, deleteProject, moveTasksToProject, openTask, projectName, updateProject, setMe, setProgress, setScope, setState, setStatus, toggleDone, titleOf, toast, updateTask, useStore, useTaskOrder } from '@/data/store'
 import { dueLabel, timeAgo } from '@/lib/dates'
 import { PRESETS } from '@/lib/presets'
 import { cn, } from '@/lib/utils'
@@ -102,7 +102,7 @@ function ComposeBody({ phone }: { phone?: boolean }) {
               {PEOPLE.map((p) => (
                 <Button
                   key={p.id} aria-pressed={assignees.includes(p.id)} variant="secondary" size="lg" className={cn('shrink-0 rounded-full pl-1', assignees.includes(p.id) && chipOn)}
-                  style={assignees.includes(p.id) ? { boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--p-${p.id}) 60%, transparent)`, background: `color-mix(in oklab, var(--p-${p.id}) 16%, #232326)` } : undefined}
+                  style={assignees.includes(p.id) ? { boxShadow: `inset 0 0 0 1px color-mix(in oklab, var(--p-${p.id}) 60%, transparent)`, background: `color-mix(in oklab, var(--p-${p.id}) 16%, #232323)` } : undefined}
                   onClick={() => setAssignees(assignees.includes(p.id) ? assignees.filter((x) => x !== p.id) : [...assignees, p.id])}
                 >
                   <PersonAvatar who={p.id} size={24} />{PERSON[p.id].name}
@@ -210,6 +210,7 @@ function DetailBody({ task, phone }: { task: Task; phone?: boolean }) {
           onClick={() => { navigator.clipboard?.writeText(task.key).then(() => toast(`Copied ${task.key}`), () => undefined) }}
           className="inline-flex h-8 items-center rounded-md px-1.5 text-sm font-medium text-foreground/80 outline-none transition-colors active:bg-accent focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-accent"
         >{task.key}</button>
+        <Button variant="ghost" size={phone ? 'icon-lg' : 'icon-sm'} aria-label="Copy link to this task" title="Copy link" onClick={() => copyTaskLink(task.id)}><Link2Icon /></Button>
         <span className="grow" />
         {pos >= 0 ? <span className="mr-1 text-xs tabular-nums text-muted-foreground max-sm:hidden">{pos + 1} / {order.length}</span> : null}
         <Button variant="ghost" size={phone ? 'icon-xl' : 'icon-sm'} aria-label="Previous task" title="Previous (K)" disabled={!prev} onClick={() => prev && openTask(prev)}><ChevronUpIcon /></Button>

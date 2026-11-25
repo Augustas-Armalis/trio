@@ -3,7 +3,7 @@ import { Fragment, type ReactNode, useMemo } from 'react'
 import type { Person } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
 import {
-  closePalette, deleteTask, duplicateTask, openCompose, openPalette, openTask, setMe, setScope, setState, setStatus,
+  closePalette, copyTaskLink, deleteTask, duplicateTask, openCompose, openPalette, openTask, setMe, setScope, setState, setStatus,
   titleOf, toast, toggleDone, updateTask, useStore,
 } from '@/data/store'
 import { PRESETS } from '@/lib/presets'
@@ -62,6 +62,7 @@ export function CommandPalette() {
           { value: 'do-due', label: 'Set due date…', icon: <CalendarDaysIcon className={ic} />, shortcut: 'D', keep: true, run: () => openPalette('due', target.id) },
           { value: 'do-move', label: 'Move to project…', icon: <FolderIcon className={ic} />, shortcut: 'M', keep: true, run: () => openPalette('project', target.id) },
           { value: 'do-copy', label: `Copy ${target.key}`, icon: <ClipboardCopyIcon className={ic} />, run: act(() => { navigator.clipboard?.writeText(target.key).then(() => toast(`Copied ${target.key}`), () => undefined) }) },
+          { value: 'do-link', label: 'Copy link', icon: <ClipboardCopyIcon className={ic} />, run: act(() => copyTaskLink(target.id)) },
           { value: 'do-dup', label: 'Duplicate', icon: <CopyIcon className={ic} />, run: act(() => duplicateTask(target.id)) },
           { value: 'do-del', label: 'Delete task', icon: <Trash2Icon className={ic} />, shortcut: '⌫', run: act(() => deleteTask(target.id)) },
         ],
@@ -151,7 +152,7 @@ export function CommandPalette() {
 }
 
 const SHORTCUTS: { title: string; rows: [string, string][] }[] = [
-  { title: 'Anywhere', rows: [['⌘ K', 'Command palette'], ['C', 'New task'], ['/', 'Search'], ['1  2  3', 'List, board, calendar'], ['?', 'This list']] },
+  { title: 'Anywhere', rows: [['⌘ K', 'Command palette'], ['C', 'New task'], ['/', 'Search'], ['1  2  3', 'List, board, calendar'], ['⌘ B', 'Hide or show the sidebar'], ['?', 'This list']] },
   { title: 'On a task (open or focused)', rows: [['X', 'Mark done'], ['S', 'Set status'], ['P', 'Set priority'], ['A', 'Assign to'], ['D', 'Set due date'], ['M', 'Move to project'], ['⌫', 'Delete (you can undo)']] },
   { title: 'Moving around', rows: [['J  or  ↓', 'Next task'], ['K  or  ↑', 'Previous task'], ['↵', 'Open the focused task'], ['Esc', 'Close or clear selection']] },
   { title: 'Selecting', rows: [['⌘ click  or  ⇧ click', 'Add a task to the selection'], ['⌘ A', 'Select everything shown']] },

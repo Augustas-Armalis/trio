@@ -1,10 +1,10 @@
 import { MotionConfig, motion } from 'motion/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   clearSelection, closePalette, deleteTask, deleteTasks, getState, openCompose, openPalette, openTask, selectMany, setState, targetTaskId,
   toggleDone, useStore, useTaskOrder, useVisibleTasks,
 } from '@/data/store'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar'
 import { ToastProvider } from '@/components/ui/toast'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { BoardView } from '@/components/trio/board'
@@ -18,6 +18,8 @@ import { useIsPhone } from '@/components/trio/picker'
 import { AppSidebar, Toolbar } from '@/components/trio/shell'
 import { SyncDialog } from '@/components/trio/sync'
 import { Compose, Lightbox, ProjectDialog, TaskSheet, WhoAreYou } from '@/components/trio/surfaces'
+
+const safeGet = (k: string) => { try { return localStorage.getItem(k) } catch { return null } }
 
 const typing = (t: EventTarget | null) => {
   const el = t as HTMLElement | null
@@ -102,6 +104,38 @@ function useShortcuts() {
   }, [])
 }
 
+const SB_MIN = 200, SB_MAX = 380, SB_DEFAULT = 240
+const clampW = (n: number) => Math.min(SB_MAX, Math.max(SB_MIN, Math.round(n)))
+
+/** A thin handle on the sidebar's edge: drag to resize, double-click to reset. The width is remembered. */
+function SidebarResizer({ width, onChange }: { width: number; onChange: (w: number) => void }) {
+  const { state } = useSidebar()
+  if (state === 'collapsed') return null
+  const start = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const el = e.currentTarget
+    el.setPointerCapture(e.pointerId)
+    document.documentElement.dataset.resizing = ''
+    const move = (ev: PointerEvent) => onChange(clampW(ev.clientX))
+    const up = () => {
+      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up)
+      delete document.documentElement.dataset.resizing
+    }
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up)
+  }
+  return (
+    <div
+      role="separator" aria-orientation="vertical" aria-label="Resize sidebar" aria-valuenow={width} aria-valuemin={SB_MIN} aria-valuemax={SB_MAX} tabIndex={0}
+      onPointerDown={start} onDoubleClick={() => onChange(SB_DEFAULT)}
+      onKeyDown={(e) => { if (e.key === 'ArrowLeft') onChange(clampW(width - 16)); else if (e.key === 'ArrowRight') onChange(clampW(width + 16)) }}
+      className="group/resizer fixed inset-y-0 z-20 hidden w-2 -translate-x-1/2 cursor-col-resize touch-none outline-none md:block"
+      style={{ left: width }}
+    >
+      <span className="mx-auto block h-full w-px bg-transparent transition-colors group-hover/resizer:bg-foreground/25 group-focus-visible/resizer:bg-foreground/40 group-active/resizer:bg-foreground/40" />
+    </div>
+  )
+}
+
 function Views() {
   const ready = useStore((s) => s.ready)
   const view = useStore((s) => s.view)
@@ -120,6 +154,8 @@ function Views() {
 export function App() {
   const phone = useIsPhone()
   const view = useStore((s) => s.view)
+  const [sbw, setSbw] = useState(() => clampW(Number(safeGet('trio:sbw')) || SB_DEFAULT))
+  useEffect(() => { try { localStorage.setItem('trio:sbw', String(sbw)) } catch { /* ignore */ } }, [sbw])
   useShortcuts()
   return (
     <MotionConfig reducedMotion="user">
@@ -127,8 +163,9 @@ export function App() {
         {phone ? (
           <PhoneApp><Views /></PhoneApp>
         ) : (
-          <SidebarProvider className="h-dvh min-h-0">
+          <SidebarProvider className="h-dvh min-h-0" style={{ '--sidebar-width': `${sbw}px` } as React.CSSProperties}>
             <AppSidebar />
+            <SidebarResizer width={sbw} onChange={setSbw} />
             <SidebarInset className="h-dvh min-h-0 overflow-hidden md:h-[calc(100dvh-1rem)]">
               <Toolbar />
               <div className="relative min-h-0 flex-1 overflow-hidden" data-view={view}><Views /></div>

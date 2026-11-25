@@ -2,7 +2,7 @@ import { CalendarIcon, CheckIcon, ChevronLeftIcon, CopyIcon, ImageIcon, Link2Ico
 import { useEffect, useRef, useState } from 'react'
 import type { Task } from '@/types'
 import { GENERAL_ID, PEOPLE, PERSON, PRIORITIES, STATUSES } from '@/data/people'
-import { actionsCloseBlocked, deleteTask, duplicateTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
+import { actionsCloseBlocked, copyTaskLink, deleteTask, duplicateTask, setState, setStatus, titleOf as _t, toggleDone, updateTask, useStore } from '@/data/store'
 import { findLinks } from '@/lib/util'
 import { cn } from '@/lib/utils'
 import { PRESETS } from '@/lib/presets'
@@ -88,6 +88,7 @@ export function TaskMenu({ task, className }: { task: Task; className?: string }
             </MenuSubPopup>
           </MenuSub>
           <MenuSeparator />
+          <MenuItem onClick={() => copyTaskLink(task.id)}><Link2Icon />Copy link</MenuItem>
           <MenuItem onClick={() => duplicateTask(task.id)}><CopyIcon />Duplicate</MenuItem>
           <MenuItem variant="destructive" onClick={() => deleteTask(task.id)}><Trash2Icon />Delete</MenuItem>
         </MenuPopup>
@@ -133,6 +134,7 @@ export function ActionsDrawer() {
                 <PickItem chevron hint={shown.due ? shown.due.slice(5) : 'None'} onClick={() => setView('due')}><span className="grid size-6 shrink-0 place-items-center"><CalendarIcon className="size-5 text-muted-foreground" /></span>Due date</PickItem>
                 <PickItem chevron hint={projectName} onClick={() => setView('project')}><span className="grid size-6 shrink-0 place-items-center"><ProjectDot hue={null} size={10} /></span>Move to project</PickItem>
                 <div className="my-1 h-px bg-border" />
+                <PickItem onClick={() => { copyTaskLink(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><Link2Icon className="size-5 text-muted-foreground" /></span>Copy link</PickItem>
                 <PickItem onClick={() => { duplicateTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><CopyIcon className="size-5 text-muted-foreground" /></span>Duplicate</PickItem>
                 <PickItem danger onClick={() => { deleteTask(shown.id); close() }}><span className="grid size-6 shrink-0 place-items-center"><Trash2Icon className="size-5" /></span>Delete</PickItem>
               </div>

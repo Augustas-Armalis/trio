@@ -409,6 +409,13 @@ export function openActions(id: string, fromHold = false) {
 export const actionsCloseBlocked = () => actionsLock.held || Date.now() < actionsLock.until
 export const openCompose = (init: ComposeInit = {}) => setState({ compose: init })
 export const closeCompose = () => setState({ compose: null })
+/** A link that opens this task for whoever has the site. */
+export const taskLink = (id: string) => `${location.origin}${location.pathname}#t-${id}`
+export function copyText(text: string, done: string) {
+  navigator.clipboard?.writeText(text).then(() => toast(done), () => toast('Could not copy'))
+}
+export const copyTaskLink = (id: string) => copyText(taskLink(id), 'Link copied')
+
 export function openTask(id: string) {
   setState({ openTaskId: id })
   setHash(`#t-${id}`)

@@ -20,7 +20,7 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
   const img = task.images[0]
   return (
     <>
-      <span className="-mb-1 ml-9 text-xs text-muted-foreground">{task.key}</span>
+      <span className="-mb-1 ml-9 max-sm:ml-12 text-xs text-muted-foreground">{task.key}</span>
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-1 [&>div:first-child]:-mt-4">
         <div className="relative z-10"><StatusBtn task={task} /></div>
         <button
@@ -29,16 +29,16 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
         >{titleOf(task)}</button>
         <div className="relative z-10"><TaskMenu task={task} className="-mt-0.5 -mr-1" /></div>
       </div>
-      {img ? <div className="ml-9 aspect-video overflow-hidden rounded-lg bg-muted"><img src={img} alt="" draggable={false} loading="lazy" className="size-full object-cover" /></div> : null}
+      {img ? <div className="ml-9 max-sm:ml-12 aspect-video overflow-hidden rounded-lg bg-muted"><img src={img} alt="" draggable={false} loading="lazy" className="size-full object-cover" /></div> : null}
       {task.status === 'in_progress' ? (
-        <div className="relative ml-9 flex h-3.5 items-center" aria-label={`${task.progress}% done`}>
+        <div className="relative ml-9 max-sm:ml-12 flex h-3.5 items-center" aria-label={`${task.progress}% done`}>
           <div className="absolute right-11 left-0 h-1 rounded-full bg-foreground/10" />
           <span className="relative z-10 block h-1 rounded-full bg-[var(--amber)] transition-[width] duration-500" style={{ width: `calc((100% - 44px) * ${Math.max(6, task.progress)} / 100)` }} />
           <b className="ml-auto tabular-nums text-[11px] font-medium text-[var(--amber)]">{task.progress}%</b>
         </div>
       ) : null}
       {phone ? (
-        <div className={cn('relative z-10 ml-9 flex min-w-0 items-center gap-2.5 text-xs text-muted-foreground', task.status === 'done' && 'opacity-55')}>
+        <div className={cn('relative z-10 ml-9 max-sm:ml-12 flex min-w-0 items-center gap-2.5 text-xs text-muted-foreground', task.status === 'done' && 'opacity-55')}>
           <PriorityIcon priority={task.priority} size={15} />
           {task.due ? <DueText due={task.due} done={task.status === 'done'} /> : null}
           <Indicators task={task} />
@@ -47,20 +47,22 @@ function CardBody({ task, showProject }: { task: Task; showProject: boolean }) {
           <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
         </div>
       ) : (
+        <>
         <div className={cn('relative z-10 ml-7 flex min-w-0 items-center gap-0.5', task.status === 'done' && 'opacity-55')}>
           <PriorityPicker variant="icon" priority={task.priority} onPick={(p) => updateTask(task.id, { priority: p })} />
           <DuePicker variant="icon" due={task.due} done={task.status === 'done'} onPick={(d) => updateTask(task.id, { due: d })} />
           <Indicators task={task} />
-          {showProject ? <ProjectChip project={task.project} className="ml-1" /> : null}
           <span className="grow" />
           <AssigneePicker variant="icon" who={task.assignees} onPick={(a) => updateTask(task.id, { assignees: a })} />
         </div>
+        {showProject ? <div className={cn('relative z-10 ml-7 flex', task.status === 'done' && 'opacity-55')}><ProjectChip project={task.project} className="max-w-full" /></div> : null}
+        </>
       )}
     </>
   )
 }
 
-const cardClass = 'relative flex flex-col gap-2 rounded-xl bg-card p-2 pr-2.5 text-card-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.4)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[#242427]'
+const cardClass = 'relative flex flex-col gap-2 rounded-xl bg-card p-2 pr-2.5 text-card-foreground shadow-[0_0_0_1px_var(--border),0_1px_2px_rgb(0_0_0/0.4)] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:bg-[#242424]'
 
 export function BoardView({ tasks, filtered }: { tasks: Task[]; filtered: boolean }) {
   const phone = useIsPhone()
@@ -98,7 +100,7 @@ function DesktopBoard({ tasks, cols }: { tasks: Task[]; cols: Map<Status, Task[]
     },
     renderGhost: (id) => {
       const t = tasks.find((x) => x.id === id)
-      return t ? <div className={cn(cardClass, 'bg-[#26262a] shadow-2xl')}><CardBody task={t} showProject={showProject} /></div> : null
+      return t ? <div className={cn(cardClass, 'bg-[#262626] shadow-2xl')}><CardBody task={t} showProject={showProject} /></div> : null
     },
   })
 
@@ -180,7 +182,7 @@ function PhoneBoard({ cols }: { cols: Map<Status, Task[]> }) {
             <section key={s.id} aria-label={s.label} className="h-full min-w-full snap-start snap-always overflow-y-auto overscroll-contain px-3 pb-6">
               <div className="flex flex-col gap-2">
                 {list.map((t) => (
-                  <div key={t.id} className={cn(cardClass, 'active:bg-[#242427]')} {...longPress(t.id)}>
+                  <div key={t.id} className={cn(cardClass, 'active:bg-[#242424]')} {...longPress(t.id)}>
                     <CardBody task={t} showProject={showProject} />
                   </div>
                 ))}

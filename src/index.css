@@ -11,7 +11,7 @@
     --animate-toast-error-even: toast-error-even 0.28s cubic-bezier(0.5, 1, 0.89, 1);
     --font-heading: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -251,28 +251,28 @@
 :root, .dark { --radius: calc(0.625rem * var(--sq)); }
 
 .dark {
-  /* graphite, never blue: page #0e0e0f, panel #141416, one step of lightness per level */
-  --sidebar: #0e0e0f;
-  --background: #141416;
-  --foreground: #f4f4f5;
-  --card: #1b1b1e;
-  --card-foreground: #f4f4f5;
-  --popover: #1c1c1f;
-  --popover-foreground: #f4f4f5;
+  /* graphite, never blue: page #0d0d0d, panel #141414, one step of lightness per level */
+  --sidebar: #0d0d0d;
+  --background: #141414;
+  --foreground: #f5f5f5;
+  --card: #1b1b1b;
+  --card-foreground: #f5f5f5;
+  --popover: #1c1c1c;
+  --popover-foreground: #f5f5f5;
   --muted: rgb(255 255 255 / 4.5%);
-  --muted-foreground: #a4a4ab;
+  --muted-foreground: #a3a3a3;
   --accent: rgb(255 255 255 / 6.5%);
-  --accent-foreground: #f4f4f5;
+  --accent-foreground: #f5f5f5;
   --secondary: rgb(255 255 255 / 6.5%);
   --border: rgb(255 255 255 / 7%);
   --input: rgb(255 255 255 / 9%);
-  --primary: #f4f4f5;
-  --primary-foreground: #0e0e0f;
+  --primary: #f5f5f5;
+  --primary-foreground: #0d0d0d;
   --ring: oklch(0.8 0.14 75);
   --sidebar-accent: rgb(255 255 255 / 7%);
   --sidebar-border: rgb(255 255 255 / 5%);
-  --sidebar-foreground: #c4c4ca;
-  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-foreground: #c4c4c4;
+  --sidebar-accent-foreground: #f5f5f5;
   --destructive: oklch(0.7 0.19 25);
   --destructive-foreground: oklch(0.78 0.15 25);
   --warning: oklch(0.8 0.14 75);
@@ -282,10 +282,10 @@
   --amber: oklch(0.8 0.14 75);
   --red: oklch(0.7 0.19 25);
   --red-soft: oklch(0.7 0.19 25 / 0.14);
-  --well: #18181a;
+  --well: #181818;
   --ring-track: rgb(255 255 255 / 0.2);
   --bar-off: rgb(255 255 255 / 0.2);
-  --p-augustas: oklch(0.76 0.12 285);
+  --p-augustas: oklch(0.84 0.05 85);
   --p-barbora: oklch(0.78 0.12 15);
   --p-rokas: oklch(0.79 0.11 165);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -297,7 +297,7 @@ html {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
   color-scheme: dark;
-  background: #0e0e0f;
+  background: #0d0d0d;
 }
 html, body, #root { height: 100%; }
 body { overflow: hidden; overscroll-behavior: none; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
@@ -318,3 +318,15 @@ body:has([role="toolbar"][aria-label$="selected"]) [data-slot="toast-viewport"] 
 }
 
 button:not(:disabled), [role="button"], [role="option"], [role="radio"], [role="tab"], a[href], summary, label[for] { cursor: pointer; }
+
+/* Geist reads a touch light on dark: one notch heavier than regular, everywhere. */
+html { font-weight: 450; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-weight: 600; }
+
+/* Tighter sidebar and no easing while its edge is being dragged. */
+[data-sidebar="menu-button"] { padding: 5px 8px; font-size: 13px; gap: 8px; min-height: 30px; }
+[data-sidebar="group-label"] { font-size: 11.5px; }
+[data-sidebar="header"] { padding: 10px 8px 6px; }
+[data-sidebar="footer"] { padding: 8px; gap: 2px; }
+[data-sidebar="group"] { padding: 4px 8px; }
+html[data-resizing] * { transition: none !important; cursor: col-resize !important; user-select: none !important; }

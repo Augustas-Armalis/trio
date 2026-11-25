@@ -1,4 +1,4 @@
-import { CalendarDaysIcon, CheckIcon, ChevronsUpDownIcon, PencilIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, KeyboardIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
+import { PanelLeftCloseIcon, CalendarDaysIcon, CheckIcon, ChevronsUpDownIcon, PencilIcon, Columns3Icon, InboxIcon, ListIcon, MenuIcon, PlusIcon, KeyboardIcon, SearchIcon, SlidersHorizontalIcon, TargetIcon, XIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import type { GroupBy, Priority, SortBy, ViewKind } from '@/types'
@@ -29,7 +29,7 @@ export function AppSidebar() {
   const mode = useStore((s) => s.mode)
   const via = useStore((s) => s.via)
   const conn = useStore((s) => s.conn)
-  const { setOpenMobile } = useSidebar()
+  const { setOpenMobile, toggleSidebar } = useSidebar()
   const go = (sc: Parameters<typeof setScope>[0]) => { setScope(sc); setOpenMobile(false) }
 
   const open = useMemo(() => {
@@ -52,9 +52,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="inset">
-      <SidebarHeader className="flex-row items-center justify-between pr-2">
+      <SidebarHeader className="flex-row items-center justify-between gap-1 pr-2">
         <span className="flex items-center gap-2.5 px-2 text-[15px] font-semibold tracking-tight"><Mark size={17} />Trio</span>
-        <Button variant="ghost" size="icon-sm" aria-label="New task" onClick={() => { openCompose(); setOpenMobile(false) }}><PlusIcon /></Button>
+        <span className="flex items-center">
+          <Button variant="ghost" size="icon-sm" aria-label="New task" title="New task (C)" onClick={() => { openCompose(); setOpenMobile(false) }}><PlusIcon /></Button>
+          <Button variant="ghost" size="icon-sm" className="max-md:hidden" aria-label="Hide sidebar" title="Hide sidebar (⌘B)" onClick={toggleSidebar}><PanelLeftCloseIcon /></Button>
+        </span>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -195,6 +198,7 @@ function ScopeMenu({ title }: { title: string }) {
 }
 
 export function Toolbar() {
+  const { state: sbState } = useSidebar()
   const { title, stat } = useScopeTitle()
   const view = useStore((s) => s.view)
   const group = useStore((s) => s.group)
@@ -213,9 +217,9 @@ export function Toolbar() {
   ) : null
 
   return (
-    <header className="flex shrink-0 flex-col gap-3 px-4 pt-3.5 pb-1.5 sm:pl-5">
-      <div className="flex min-h-9 items-center gap-3.5">
-        <SidebarTrigger className="md:hidden" />
+    <header className="flex shrink-0 flex-col gap-2 px-4 pt-3 pb-1 sm:pl-5">
+      <div className="flex min-h-8 items-center gap-3">
+        <SidebarTrigger className={sbState === 'expanded' ? 'md:hidden' : ''} title="Show sidebar (⌘B)" />
         <h1 className="m-0 min-w-0 max-w-[22rem] shrink-0 text-lg leading-tight font-semibold tracking-tight"><ScopeMenu title={title} /></h1>
         {progress}
         <span className="grow" />

@@ -78,7 +78,7 @@ export function PersonAvatar({ who, size = 24, className }: { who: Person | null
     )
   }
   return (
-    <Avatar style={style} className={cn('bg-[color-mix(in_oklab,var(--pc)_26%,#1a1a1d)] ring-1 ring-inset ring-white/10', className)}>
+    <Avatar style={style} className={cn('bg-[color-mix(in_oklab,var(--pc)_26%,#1a1a1a)] ring-1 ring-inset ring-white/10', className)}>
       <AvatarImage src={memojiOf(who)} alt={PERSON[who].name} draggable={false} data-memoji />
       <AvatarFallback>{PERSON[who].name[0]}</AvatarFallback>
     </Avatar>

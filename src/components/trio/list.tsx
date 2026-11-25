@@ -91,7 +91,7 @@ export function TaskRow({ task, showProject, fancy, index = 0, intro = false }: 
     </>
   )
 
-  const rowClass = 'relative grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 rounded-xl bg-background pr-2 pl-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:min-h-10 sm:gap-1.5 sm:pl-1.5 [@media(hover:hover)]:hover:bg-accent/60 sm:[content-visibility:auto] sm:[contain-intrinsic-size:auto_40px]'
+  const rowClass = 'relative grid min-h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1 rounded-xl bg-background pr-2 pl-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9 sm:gap-1.5 sm:pl-1.5 [@media(hover:hover)]:hover:bg-accent/60 sm:[content-visibility:auto] sm:[contain-intrinsic-size:auto_36px]'
   const common = { 'data-task': task.id }
 
   const inner = touch ? (
@@ -207,8 +207,8 @@ export function ListView({ tasks, filtered }: { tasks: Task[]; filtered: boolean
       {groups.map((g) => {
         const isCollapsed = collapsed.has(g.key)
         return (
-          <section key={g.key} aria-label={g.label} className="mb-1.5">
-            <header className="sticky top-0 z-10 flex h-12 items-center justify-between bg-background/90 pr-1.5 pl-1 backdrop-blur-md sm:h-9">
+          <section key={g.key} aria-label={g.label} className="mb-0.5 sm:mb-1">
+            <header className="sticky top-0 z-10 flex h-12 items-center justify-between bg-background/90 pr-1.5 pl-1 backdrop-blur-md sm:h-8">
               <button className="flex h-9 items-center gap-2 rounded-lg pr-2 pl-1 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-7" onClick={() => toggle(g.key)} aria-expanded={!isCollapsed}>
                 <ChevronRightIcon className={cn('size-4 text-muted-foreground/60 transition-transform duration-200', !isCollapsed && 'rotate-90')} />
                 <span className="grid w-5 place-items-center">{g.icon}</span>

@@ -6,7 +6,8 @@ import type { ComposerItemValue, ComposerPart, ComposerTokenPart, ComposerValue 
 import { Composer, ComposerInput, ComposerItem, ComposerList, ComposerPopup } from '@/components/ui/composer'
 import { StatusIcon } from './primitives'
 
-const KEY_RE = /\b([A-Za-z][A-Za-z0-9]{1,4}-\d+)\b/g
+/** A task link (…#t-<id>) or an issue key such as WEB-12. */
+const REF_RE = /(https?:\/\/[^\s]*#t-([\w-]+))|\b([A-Za-z][A-Za-z0-9]{1,4}-\d+)\b/g
 
 const tokenFor = (t: Task): ComposerTokenPart => ({ type: 'mention', id: t.id, label: t.key, trigger: '#', kind: 'issue', text: t.key })
 
@@ -15,10 +16,13 @@ export function toParts(text: string, keys: Map<string, Task>, typing = false): 
   const parts: ComposerPart[] = []
   let last = 0
   const push = (s: string) => { if (s) parts.push({ type: 'text', text: s }) }
-  for (const m of text.matchAll(KEY_RE)) {
+  let byId: Map<string, Task> | null = null
+  for (const m of text.matchAll(REF_RE)) {
     const at = m.index ?? 0
     const end = at + m[0].length
-    const t = keys.get(m[0].toUpperCase())
+    let t: Task | undefined
+    if (m[2]) { byId ??= new Map([...keys.values()].map((x) => [x.id, x])); t = byId.get(m[2]) }
+    else t = keys.get(m[3].toUpperCase())
     if (!t || (typing && !/\s/.test(text[end] ?? ''))) continue
     push(text.slice(last, at))
     parts.push(tokenFor(t))
@@ -31,12 +35,12 @@ export function toParts(text: string, keys: Map<string, Task>, typing = false): 
 export const fromParts = (parts: ComposerValue): string => parts.map((p) => (p.type === 'text' ? p.text : (p.text ?? p.label))).join('')
 
 /** After an edit: link keys that now have a trailing space, leave existing tokens alone. */
-function linkTyped(parts: ComposerValue, keys: Map<string, Task>): ComposerValue {
+function linkTyped(parts: ComposerValue, keys: Map<string, Task>, pasted = false): ComposerValue {
   let changed = false
   const out: ComposerPart[] = []
   for (const p of parts) {
     if (p.type !== 'text') { out.push(p); continue }
-    const next = toParts(p.text, keys, true)
+    const next = toParts(p.text, keys, !pasted)
     if (next.length !== 1 || next[0].type !== 'text') changed = true
     out.push(...next)
   }
@@ -83,7 +87,7 @@ export function focusStart(el: HTMLElement | null) {
 
 /**
  * The description: plain text that turns issue keys into clickable chips. Type WEB-12 and a space, or type # and pick
- * an issue. Saves as an ordinary string (the chip is the key), so nothing else has to know about it.
+ * an issue, or type / for the same list. Paste a task link or key and it becomes a chip too. Saves as an ordinary string (the chip is the key), so nothing else has to know about it.
  */
 export function RichText({
   value, onChange, placeholder, className, inputRef, onKeyDown,
@@ -97,6 +101,7 @@ export function RichText({
 }) {
   const keys = useKeyIndex()
   const tasks = useStore((s) => s.tasks)
+  const pasting = useRef(false)
   const [parts, setParts] = useState<ComposerValue>(() => toParts(value, keys))
   // Take outside changes (another person's edit, a reset) when they differ from what is on screen.
   useEffect(() => { if (fromParts(parts) !== value) setParts(toParts(value, keys)) }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -114,19 +119,20 @@ export function RichText({
     <Composer
       value={parts}
       onValueChange={(next, details) => {
-        const out = details.reason === 'input' ? linkTyped(next, keys) : next
+        const out = details.reason === 'input' ? linkTyped(next, keys, pasting.current) : next
+        pasting.current = false
         setParts(out)
         onChange(fromParts(out))
       }}
-      triggers={[{
-        character: '#', items,
-        filter: (item, q) => { const n = q.toLowerCase(); return !n || item.label.toLowerCase().includes(n) || (item.description ?? '').toLowerCase().includes(n) },
-      }]}
+      triggers={['#', '/'].map((character) => ({
+        character, items,
+        filter: (item: ComposerItemValue, q: string) => { const n = q.toLowerCase(); return !n || item.label.toLowerCase().includes(n) || (item.description ?? '').toLowerCase().includes(n) },
+      }))}
       submitOnEnter="never" allowEmpty
       className="min-h-0 rounded-none border-0 bg-transparent p-0 pb-0 shadow-none ring-0 before:hidden has-[[data-slot=composer-input]:focus-visible]:border-0 has-[[data-slot=composer-input]:focus-visible]:ring-0 dark:bg-transparent"
     >
       <ComposerInput
-        ref={inputRef} placeholder={placeholder} renderToken={(t) => <IssueChip token={t} />} onKeyDown={onKeyDown}
+        ref={inputRef} placeholder={placeholder} renderToken={(t) => <IssueChip token={t} />} onKeyDown={onKeyDown} onPaste={() => { pasting.current = true; setTimeout(() => { pasting.current = false }, 300) }}
         className={cn('px-0 py-0 text-base leading-6 text-foreground/80 placeholder:text-muted-foreground/50 sm:text-[15px] md:min-h-0', className)}
       />
       <ComposerPopup className="w-80 max-w-[calc(100vw-2rem)]" side="bottom">

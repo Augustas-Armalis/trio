@@ -168,7 +168,7 @@ export function AssigneePicker({ who, onPick, variant = 'field', pill }: { who: 
     <Picker
       title="Assign to"
       align={variant === 'icon' ? 'end' : 'start'}
-      button={pill ? { ...pillBtn, className: 'shrink-0 rounded-full pl-1', 'aria-label': aria } : variant === 'icon' ? { variant: 'ghost', size: 'icon-sm', 'aria-label': aria } : { ...fieldBtn, 'aria-label': aria }}
+      button={pill ? { ...pillBtn, className: 'shrink-0 rounded-full pl-1', 'aria-label': aria } : variant === 'icon' ? { variant: 'ghost', size: 'icon-sm', className: 'w-auto min-w-8 px-1', 'aria-label': aria } : { ...fieldBtn, 'aria-label': aria }}
       label={variant === 'icon' ? <AvatarStack who={who} size={24} /> : <><AvatarStack who={who} size={pill ? 22 : 20} /><span className="truncate">{who.length ? (who.length > 2 ? `${who.length} people` : who.map((w) => PERSON[w].name).join(', ')) : 'Unassigned'}</span>{pill ? null : <ChevronDownIcon className="opacity-40" />}</>}
     >
       {() => <PeopleList who={who} onChange={onPick} />}
